@@ -199,6 +199,17 @@ def _card_html(
                 f"<strong>\u00a3{rounded:,}</strong></div>"
             )
 
+    # Short scoring rationale (helps explain MOT gates, margin, etc.)
+    reason_html = ""
+    raw_reason = (out.reason or "").strip()
+    if out.decision in ("BUY", "OFFER", "PASS") and raw_reason:
+        cap = 180
+        snippet = raw_reason if len(raw_reason) <= cap else raw_reason[: cap - 1] + "\u2026"
+        reason_html = (
+            f'<div class="decision-reason" title="{html_lib.escape(raw_reason[:800])}">'
+            f"{html_lib.escape(snippet)}</div>"
+        )
+
     # Repair profile note
     repair_note = ""
     if deal.repair_profile_notes:
@@ -305,6 +316,7 @@ def _card_html(
         f'{_p_mot_label(out.p_mot, listing.mot_history)}'
         f'</span><span class="nl">p_MOT</span></div>\n'
         f'    </div>\n'
+        f'    {reason_html}\n'
         f'    <div class="vrm-row">VRM: {vrm_html}</div>\n'
         f'    {cart_button}\n'
         f'    {offer_line}{repair_note}{offer_msg_html}{mot_html}\n'
@@ -490,6 +502,10 @@ body[data-density=dense] .section-title{margin:22px 0 10px}
 /* hints */
 .offer-hint{font-size:.82em;font-weight:600;color:#f59e0b;margin-bottom:4px}
 .offer-hint.ok{color:#22c55e}
+.decision-reason{font-size:.78em;line-height:1.35;color:var(--dim);margin:6px 0 2px;
+                 padding:5px 8px;background:rgba(100,116,139,.12);border-radius:6px;
+                 border-left:3px solid var(--border)}
+[data-theme=dark] .decision-reason{background:rgba(148,163,184,.1)}
 .repair-note{font-size:.76em;color:#7a4f10;margin-bottom:4px;padding:4px 8px;
              background:#f7ead1;border-radius:6px}
 [data-theme=dark] .repair-note{background:#342a1f;color:#d9b16d}

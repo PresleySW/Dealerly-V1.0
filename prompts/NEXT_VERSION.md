@@ -13,3 +13,5 @@ Generated: 2026-03-20 12:11
 ## Build Directives For Next Version
 - Improve VRM hit-rate in the scored pool via stronger labelled-reg extraction and earlier cache reuse before ANPR calls.
 - Increase ANPR credit efficiency with stronger early exits and confidence thresholds on low-upside listings.
+- Validate Facebook listing titles after aria/alt hinting; tune heuristics if marketplace markup shifts.
+- Review scoring `reason` strings for clarity now that the HTML report surfaces them on cards.

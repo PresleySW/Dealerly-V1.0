@@ -5,8 +5,9 @@ UK car flip intelligence CLI: multi-platform ingest, scoring, VRM/MOT enrichment
 ## Quick start (after `git clone`)
 
 1. **Python 3.10+** — create a venv and install deps (see `CLAUDE.md` / your usual `pip` set).
-2. **Secrets** — copy `dealerly/.env` locally (file is **gitignored**; never commit API keys). GitHub will reject pushes that include secrets.
-3. **Run** — from repo root: `python -m dealerly.cli` (or your existing entrypoint per `CLAUDE.md`).
+2. **Secrets** — copy `dealerly/.env` locally (file is **gitignored**; never commit API keys). GitHub will reject pushes that include secrets. Facebook session exports (`fb_cookies.json`) are also gitignored — regenerate locally after clone.
+3. **Obsidian vault (optional)** — Dealerly exports leads/VRM graph to a **local** vault. Default path is `D:/RHUL/Dealerly/Dealerly_Vault`. Override with `DEALERLY_OBSIDIAN_VAULT` in `dealerly/.env`. See the vault note `_Dealerly_Brain.md` at the vault root.
+4. **Run** — from repo root: `python -m dealerly.cli` (or your existing entrypoint per `CLAUDE.md`).
 
 ## Docs
 

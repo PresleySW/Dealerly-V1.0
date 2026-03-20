@@ -2,6 +2,8 @@
 .env
 **/.env
 *.env.local
+fb_cookies.json
+**/fb_cookies.json
 
 # Local DB / logs (per project rules)
 dealerly.db

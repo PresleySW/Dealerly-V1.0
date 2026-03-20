@@ -21,7 +21,7 @@ from dealerly.autotrader import AutoTraderComps
 from dealerly.config import (
     DB_PATH, DEAL_LOG_PATH, DEFAULT_COMPS_LOOKUP_LIMIT, DEFAULT_TOP_N,
     ENABLED_PLATFORMS, PAGE_SIZE, QUERY_PRESETS, REPORTS_DIR, REQUEST_SLEEP_S,
-    Config, ANPR_MIN_SCORE_THRESHOLD,
+    Config, ANPR_MIN_SCORE_THRESHOLD, obsidian_vault_path,
 )
 from dealerly.db import db_connect, init_db, watchlist_add, upsert_item_vrm, get_item_vrm, get_verified_vehicle
 from dealerly.ebay import (
@@ -731,16 +731,64 @@ def _select_display_rows(
 ) -> list[tuple[Listing, DealInput, DealOutput]]:
     """
     Prioritize high-quality actionable rows for main display.
+
+    When BUY/OFFER rows span multiple platforms, round-robin the best picks
+    per platform so a single high-volume source (e.g. Facebook) does not
+    fill the entire main grid before eBay/Motors appear.
     """
     actionable = [r for r in rows if r[2].decision in ("BUY", "OFFER")]
-    if len(actionable) >= limit:
-        return actionable[:limit]
+
+    def _diversify(cands: list[tuple[Listing, DealInput, DealOutput]], cap: int):
+        if cap <= 0:
+            return []
+        if len(cands) <= cap:
+            return sorted(cands, key=lambda r: -r[2].expected_profit)
+        platforms = {r[0].platform for r in cands}
+        if len(platforms) <= 1:
+            return sorted(cands, key=lambda r: -r[2].expected_profit)[:cap]
+        by_plat: Dict[str, list[tuple[Listing, DealInput, DealOutput]]] = {}
+        for r in cands:
+            by_plat.setdefault(r[0].platform, []).append(r)
+        for bucket in by_plat.values():
+            bucket.sort(key=lambda r: -r[2].expected_profit)
+        plat_order = sorted(
+            by_plat.keys(),
+            key=lambda p: (
+                -by_plat[p][0][2].expected_profit if by_plat[p] else 0.0,
+                p,
+            ),
+        )
+        picked: list[tuple[Listing, DealInput, DealOutput]] = []
+        idx = 0
+        while len(picked) < cap:
+            progressed = False
+            for p in plat_order:
+                if len(picked) >= cap:
+                    break
+                b = by_plat[p]
+                if idx < len(b):
+                    picked.append(b[idx])
+                    progressed = True
+            if not progressed:
+                break
+            idx += 1
+        if len(picked) < cap:
+            keyfn = lambda r: (r[0].platform, r[0].item_id)
+            chosen = {keyfn(r) for r in picked}
+            rest = [r for r in cands if keyfn(r) not in chosen]
+            rest.sort(key=lambda r: -r[2].expected_profit)
+            picked.extend(rest[: cap - len(picked)])
+        return picked[:cap]
+
+    out = _diversify(actionable, limit)
+    if len(out) >= limit:
+        return out
     pass_floor = -max(80.0, near_miss_band * 0.6)
     useful_pass = [
         r for r in rows
         if r[2].decision == "PASS" and r[2].expected_profit >= pass_floor
     ]
-    out = list(actionable)
+    useful_pass.sort(key=lambda r: -r[2].expected_profit)
     out.extend(useful_pass[: max(0, limit - len(out))])
     return out[:limit]
 
@@ -799,11 +847,12 @@ def run(cfg: Config) -> None:
 
     init_db(DB_PATH)
     conn = db_connect(DB_PATH)
-    _obsidian_root = Path("D:/RHUL/Dealerly/Dealerly_Vault")
+    _obsidian_root = obsidian_vault_path()
     _brain_t0 = time.time()
     obsidian_brain = load_obsidian_brain(_obsidian_root)
     print(
-        f"[Obsidian] Loaded VRM memory: {obsidian_brain.vrm_count} rows "
+        f"[Obsidian] Vault: {_obsidian_root} | "
+        f"VRM memory: {obsidian_brain.vrm_count} rows "
         f"({time.time() - _brain_t0:.2f}s)"
     )
     try:
@@ -1492,10 +1541,10 @@ def run(cfg: Config) -> None:
     try:
         leads_created = auto_create_leads(conn, top_rows)
         print(f"  Created {leads_created} new CRM leads")
-        vault_leads_dir = Path("D:/RHUL/Dealerly/Dealerly_Vault/Leads")
+        vault_leads_dir = _obsidian_root / "Leads"
         obsidian_exported = export_buy_leads_to_obsidian(top_rows, vault_leads_dir)
         print(f"  Obsidian BUY exports: {obsidian_exported} file(s) -> {vault_leads_dir}")
-        vault_db_dir = Path("D:/RHUL/Dealerly/Dealerly_Vault/Database")
+        vault_db_dir = _obsidian_root / "Database"
         vrm_exported = export_vrm_scans_to_obsidian(listings, vault_db_dir)
         print(f"  Obsidian VRM scans: {vrm_exported} row(s) -> {vault_db_dir / 'vrm_scans.md'}")
         # Backfill is expensive on every run. Only perform automatically if the

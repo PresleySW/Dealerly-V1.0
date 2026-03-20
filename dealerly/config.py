@@ -123,6 +123,17 @@ SEASONAL_FACTORS: list = [
 # ---------------------------------------------------------------------------
 
 DEFAULT_FOLLOW_UP_HOURS: int = 48
+
+
+def obsidian_vault_path() -> Path:
+    """
+    Local Obsidian vault root (not in git). Set DEALERLY_OBSIDIAN_VAULT to
+    override when the repo lives on another drive or machine.
+    """
+    raw = os.environ.get("DEALERLY_OBSIDIAN_VAULT", "").strip()
+    if raw:
+        return Path(raw).expanduser()
+    return Path("D:/RHUL/Dealerly/Dealerly_Vault")
 DEFAULT_INSPECTION_DEADLINE_DAYS: int = 7
 AUTO_CREATE_LEADS: bool = True
 

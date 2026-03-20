@@ -2,6 +2,7 @@
 
 ## Latest Session Handoff (2026-03-20)
 - Facebook can now yield high volume when runtime path is healthy; quality (title/VRM/mileage) still lags — see snapshot below.
+- **New:** Facebook cards pull `aria-label` / image `alt` for titles when span text is junk; main report grid round-robins platforms for BUY/OFFER; cards show scoring **reason** snippet; `fb_cookies.json` gitignored.
 - Runtime/API pressure in Phase 2 + Phase 3 has been reduced with stricter top-slice gates and lower candidate caps.
 - Report now has explicit cart access (`Open cart`) plus a dedicated cart review panel.
 - Visible-plate VRM recovery has been improved with ANPR OCR confusion repair.
@@ -24,8 +25,8 @@
   - DVLA calls `3` (+ `0` validation calls)
   - AutoTrader candidates: phase2 `96`, phase4 `48`
 - Quality blockers:
-  - Facebook cards still frequently show generic title/location strings (`London, United Kingdom`).
-  - Facebook mileage often missing.
+  - Facebook cards still often show weak titles/locations; **mitigation in code:** prefer `aria-label` / image `alt` over span soup — needs fresh-run validation.
+  - Facebook mileage often missing (hints now included in mileage regex scan).
   - Facebook VRM coverage remains weak.
   - Positive-profit top case (`~£444`) remained OFFER (no BUY); decision-gate explainability needs explicit validation (MOT/DVSA/risk-gate effects).
   - ANPR call budget may be suppressing VRM recovery in top rows; verify against credit availability and gating thresholds.
@@ -130,13 +131,18 @@ Outcompete sourcing-only tools by keeping Dealerly's USP as a decision-intellige
    - Added masked/missing seller location fallback labels (`ebay seller`, `motors seller`) in card metadata.
    - Added ANPR OCR confusion repair for visible plate recovery (0/O, 1/I, 5/S, 8/B).
    - Added repeatable zip export utility: `powershell -ExecutionPolicy Bypass -File .\export_dealerly_zip.ps1`.
+24. Facebook + report UX pass (2026-03-20):
+   - Facebook scrape captures `aria-label` and image `alt`/`title`; card parser prefers these over location-only span text.
+   - Pipeline main-grid selection round-robins BUY/OFFER across platforms so mixed runs surface eBay/Motors beside Facebook.
+   - HTML report cards show a truncated scoring **reason** (tooltip = full string) for BUY/OFFER/PASS.
+   - `.gitignore` now excludes `fb_cookies.json`.
 
 ## Runtime Notes
 - Playwright Chromium is installed and launchable (`chromium_ok=True`).
 - Motors issue was payload format drift on generic landing pages, not missing Chromium.
 
 ## Next ROI Steps
-1. Run end-to-end validation to confirm Facebook yield improvement on a live session/cookie state.
+1. Run end-to-end validation to confirm Facebook **title** quality after aria/alt hinting (yield already high when Playwright path is healthy).
 2. Re-check BUY/OFFER quality and runtime after stricter top-slice caps; tune only if decision quality drops.
 3. Validate loading-screen to report handoff and cart panel behavior in a full report run.
 4. Continue reducing Phase 7 cost (Obsidian write batching) if runtime remains above target.

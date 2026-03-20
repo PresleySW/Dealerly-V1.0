@@ -8,7 +8,7 @@ You are continuing development on Dealerly.
 - Core package: `<repo>/dealerly/`
 - Reports: `<repo>/reports/`
 - Runtime logs: `prompts/PIPELINE_REPORT.md`, `prompts/NEXT_VERSION.md`
-- Obsidian vault: `D:/RHUL/Dealerly/Dealerly_Vault/` (local only; not in GitHub)
+- Obsidian vault: `D:/RHUL/Dealerly/Dealerly_Vault/` (local only; not in GitHub). Override: `DEALERLY_OBSIDIAN_VAULT` in `dealerly/.env`. Entry note: vault root `_Dealerly_Brain.md`.
 
 ## GitHub + secrets (mandatory)
 - `.env` / `dealerly/.env` are **gitignored** — never commit API keys. GitHub **secret scanning** will block pushes if keys are in history.
@@ -35,9 +35,10 @@ Then read:
 
 ## Latest Run Reality (must account for this)
 - Facebook ingestion now succeeds in volume (`facebook: 943`), but quality is weak:
-  - many Facebook rows have poor title/location quality (e.g., "London, United Kingdom" as title)
-  - mileage often missing
+  - many Facebook rows still have poor title/location quality; **new:** parser prefers `aria-label` / image `alt` when span text is location-only — verify on next run
+  - mileage often missing (parser now also scans aria/alt text for mileage patterns)
   - VRM coverage remains low on Facebook cards
+- Report UX: main BUY/OFFER grid **diversifies by platform** (round-robin) so one platform does not monopolize the shortlist viewport; cards show a truncated scoring **reason** for BUY/OFFER/PASS.
 - Runtime still heavy in Phase 1/2 (latest: Phase1 287s, Phase2 149s).
 - Phase 3/4 improved vs prior expensive fan-out, but VRM hit-rate is still limited.
 - Decisions: `0 BUY`, `18 OFFER`, `4 PASS`, `23 AVOID`.

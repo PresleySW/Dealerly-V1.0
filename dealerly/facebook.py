@@ -103,6 +103,58 @@ _LISTING_CONTAINER_SELECTOR = "[data-testid='marketplace_feed_item']"
 _ALT_LISTING_SELECTOR = "div[aria-label='Marketplace item']"
 
 
+def _fb_text_looks_like_place_only(s: str) -> bool:
+    """Heuristic: string is likely a location, not a vehicle title."""
+    t = (s or "").strip().lower()
+    if not t or len(t) < 4:
+        return True
+    if "united kingdom" in t or t.endswith(", uk"):
+        return True
+    if re.match(r"^[a-z\s,]+(?:united kingdom|england|scotland|wales)$", t):
+        return True
+    return False
+
+
+def _fb_pick_title_from_hints(card: dict, texts: list, location: str, item_id: str) -> str:
+    """
+    Prefer aria-label / image alt over span soup when FB hides the real title.
+    """
+    hints: list[str] = []
+    for key in ("aria_label", "img_alt", "img_title"):
+        v = (card.get(key) or "").strip()
+        if v and len(v) > 6:
+            hints.append(v)
+    loc_norm = re.sub(r"\s+", " ", (location or "").strip().lower())
+    for h in hints:
+        hn = re.sub(r"\s+", " ", h.lower())
+        if loc_norm and hn == loc_norm:
+            continue
+        if _fb_text_looks_like_place_only(h) and "£" not in h:
+            continue
+        # aria often starts with "Marketplace listing:" or similar — strip noise
+        cleaned = re.sub(
+            r"^(marketplace\s*(listing|item)\s*[:\-]\s*)",
+            "",
+            h,
+            flags=re.I,
+        ).strip()
+        if len(cleaned) > 8 and not _fb_text_looks_like_place_only(cleaned):
+            return cleaned[:200]
+    # Longest non-location span
+    title = ""
+    for text in texts:
+        tx = str(text or "").strip()
+        if len(tx) > len(title) and len(tx) > 5 and not _fb_text_looks_like_place_only(tx):
+            title = tx[:200]
+    if title:
+        return title
+    for text in texts:
+        tx = str(text or "").strip()
+        if len(tx) > len(title) and len(tx) > 5:
+            title = tx[:200]
+    return title or f"Facebook vehicle {item_id}"
+
+
 # ---------------------------------------------------------------------------
 # FacebookAdapter
 # ---------------------------------------------------------------------------
@@ -509,11 +561,17 @@ def _extract_cards(
                     const img = anchor.querySelector('img');
                     const spans = anchor.querySelectorAll('span');
                     const texts = Array.from(spans).map(s => s.textContent.trim()).filter(Boolean);
+                    const aria = (anchor.getAttribute('aria-label') || '').trim();
+                    const imgAlt = img ? (img.getAttribute('alt') || '').trim() : '';
+                    const imgTitle = img ? (img.getAttribute('title') || '').trim() : '';
 
                     results.push({
                         url: href,
                         image: img ? img.src : '',
                         texts: texts,
+                        aria_label: aria,
+                        img_alt: imgAlt,
+                        img_title: imgTitle,
                     });
                 } catch (e) {}
             }
@@ -572,8 +630,6 @@ def _card_to_listing(
     texts = card.get("texts") or []
     image_url = card.get("image") or ""
 
-    # Parse title — typically the first non-price text span
-    title = ""
     price = 0.0
     location = ""
 
@@ -594,11 +650,7 @@ def _card_to_listing(
                 location = text
             continue
 
-        # Title: the longest meaningful text span
-        if len(text) > len(title) and len(text) > 5:
-            title = text[:200]
-
-    if not title or price <= 0:
+    if price <= 0:
         return None
 
     if price < price_min or price > price_max:
@@ -608,24 +660,8 @@ def _card_to_listing(
     item_id_match = re.search(r"/marketplace/item/(\d+)", url)
     item_id = f"fb_{item_id_match.group(1)}" if item_id_match else f"fb_{abs(hash(url_key)):x}"
 
-    # Guard: some FB cards expose only location text and no real title.
-    # Keep a neutral fallback title instead of "London, United Kingdom".
-    _title_norm = re.sub(r"\s+", " ", title.strip().lower())
-    _loc_norm = re.sub(r"\s+", " ", location.strip().lower())
-    if _title_norm and (_title_norm == _loc_norm or "united kingdom" in _title_norm):
-        alt = ""
-        for text in texts:
-            t = str(text or "").strip()
-            if len(t) < 8:
-                continue
-            tl = t.lower()
-            if "£" in t:
-                continue
-            if tl == _loc_norm or "united kingdom" in tl:
-                continue
-            alt = t[:200]
-            break
-        title = alt or f"Facebook vehicle {item_id}"
+    # Title: prefer aria-label / image alt when span soup is only location/price
+    title = _fb_pick_title_from_hints(card, texts, location, item_id)
 
     guess = guess_make_model(title)
     fuel = guess.fuel_type
@@ -658,7 +694,10 @@ def _card_to_listing(
 
     # FB cards often omit structured mileage/year. Try a text fallback.
     if not listing.mileage:
-        blob = " ".join(str(x) for x in texts).replace(",", "").lower()
+        blob = " ".join(str(x) for x in texts)
+        for key in ("aria_label", "img_alt", "img_title"):
+            blob += " " + str(card.get(key) or "")
+        blob = blob.replace(",", "").lower()
         m = re.search(r"\b(\d{2,3})(?:\.(\d))?\s*k\s*(?:miles?|mi)?\b", blob)
         if m:
             whole = int(m.group(1))
