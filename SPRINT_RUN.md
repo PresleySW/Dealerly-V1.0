@@ -1,11 +1,11 @@
 ## Status: Active — sprint continuation
-Current runs are producing high-value BUY/OFFER opportunities, but Facebook yield, cart usability, and runtime/API efficiency remain critical.
+Latest runs show strong OFFER volume and Facebook ingest scale; BUY gating, Facebook card quality (title/VRM/mileage), and Phase 1/2 runtime remain priorities.
 
 ## Latest Verified Run Snapshot
-- Report source: `prompts/PIPELINE_REPORT.md` (2026-03-20 10:35)
-- Platforms: eBay `151`, Motors `64`, Facebook `0`
-- Decisions: BUY `1`, OFFER `13`, PASS `14`, AVOID `7`
-- Runtime hotspots: Phase 2 (`125.9s`) and Phase 3 (`75.7s`)
+- Report source: `prompts/PIPELINE_REPORT.md` (2026-03-20 **12:11** — refresh if newer run exists)
+- Platforms: eBay `98`, Motors `32`, Facebook `943`
+- Decisions: BUY `0`, OFFER `18`, PASS `4`, AVOID `23`
+- Runtime hotspots: Phase 1 (`287.1s`), Phase 2 (`148.7s`); Phase 3/4 lower (`52.8s` / `23.7s`)
 
 ## Completed In This Iteration
 - **API/runtime gating pass:** Tightened Phase 2/4 candidate limits and applied stricter top-slice gates for Phase 3/4.5 ANPR and DVLA enrichment.
@@ -30,7 +30,8 @@ Current runs are producing high-value BUY/OFFER opportunities, but Facebook yiel
 5. **Seller/dealer label fallback (Medium)**
    - Confirm all masked postcode-style labels are replaced consistently.
 6. **Packaging + handoff (Medium)**
-   - Zip export command added; verify archive contents before upload handoff.
+   - GitHub: source pushed to remote; `.env` gitignored — no secrets in repo.
+   - Zip export (`export_dealerly_zip.ps1`) optional for offline handoff only.
    - Keep Obsidian/context handoff docs minimal-token and up to date.
 
 ## Guardrails
@@ -42,9 +43,9 @@ Current runs are producing high-value BUY/OFFER opportunities, but Facebook yiel
 - Minimize external/API usage unless expected decision value is high.
 
 ## AI Next Steps Prompt
-1. Stabilize Facebook yield and session handling before adding feature scope.
-2. Add explicit cart-access UX (not only inline add/remove buttons).
-3. Tighten VRM extraction where plate is visibly present in images.
-4. Replace missing seller/dealer display with platform-specific fallback labels.
-5. Add root-directory zip export task and Obsidian-context refresh docs.
-6. Keep API and token usage minimal by default.
+1. Facebook **quality** (title/VRM/mileage) after volume fix; balance shortlist vs eBay/Motors dilution.
+2. VRM yield vs ANPR budget / credits; labelled extraction and cache-first paths.
+3. BUY vs OFFER explainability for high-profit rows (MOT/DVSA/risk gates).
+4. Phase 1/2 runtime if gather + prelim scoring remain dominant.
+5. Obsidian/context docs stay minimal-token; surgical edits + `python -m impeccable`.
+6. Keep API and token usage minimal by default; production offer messages off unless explicitly enabled.

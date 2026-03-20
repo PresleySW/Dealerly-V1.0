@@ -3,11 +3,17 @@
 You are continuing development on Dealerly.
 
 ## Paths
-- Root: `D:/RHUL/Dealerly/Dealerly 0.9/`
-- Core package: `D:/RHUL/Dealerly/Dealerly 0.9/dealerly/`
-- Reports: `D:/RHUL/Dealerly/Dealerly 0.9/reports/`
+- Root (local dev): `D:/RHUL/Dealerly/Dealerly 0.9/` — after `git clone`, use your clone folder instead.
+- Remote: `https://github.com/PresleySW/Dealerly-V1.0` (or current repo URL).
+- Core package: `<repo>/dealerly/`
+- Reports: `<repo>/reports/`
 - Runtime logs: `prompts/PIPELINE_REPORT.md`, `prompts/NEXT_VERSION.md`
-- Obsidian vault: `D:/RHUL/Dealerly/Dealerly_Vault/`
+- Obsidian vault: `D:/RHUL/Dealerly/Dealerly_Vault/` (local only; not in GitHub)
+
+## GitHub + secrets (mandatory)
+- `.env` / `dealerly/.env` are **gitignored** — never commit API keys. GitHub **secret scanning** will block pushes if keys are in history.
+- After clone: copy a local `dealerly/.env` from backup; rotate any key that was ever committed.
+- New machine: `git clone` → open folder in Cursor/Claude Code → `python -m venv .venv` → `pip install` deps → restore `.env`.
 
 ## Source-of-Truth Order (strict)
 1. `CLAUDE.md`
@@ -37,7 +43,7 @@ Then read:
 - Decisions: `0 BUY`, `18 OFFER`, `4 PASS`, `23 AVOID`.
 - There is a top listing with `~£444` expected profit but still `OFFER`, not `BUY`.
   - Investigate with code-level evidence (risk buffers, MOT confidence, DVSA verification gate, fallback repair assumptions).
-- Offer-message API generation must be OFF by default in production.
+- Offer-message API generation must be OFF by default in production (`DEALERLY_ENV=production` or `production`; override with `DEALERLY_ENABLE_OFFER_MSGS=1` only when intended).
 
 ## Product + UX Direction
 Use sound UX laws and visual hierarchy in report/setup UX decisions:
@@ -96,9 +102,8 @@ Apply these to reduce confusion, improve discoverability, and keep actionable fo
 5. Provide zip handoff command + generated zip path.
 
 ## Zip Command (preferred)
-Run from root:
+Run from repo root:
 
 `powershell -ExecutionPolicy Bypass -File .\export_dealerly_zip.ps1`
 
-Then report the resulting zip file path.
-
+Then report the resulting zip path. For normal GitHub workflow prefer **`git push`** of source; use zip only for offline handoff.

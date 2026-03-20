@@ -1,7 +1,7 @@
 # Dealerly ROI Queue (Live)
 
 ## Latest Session Handoff (2026-03-20)
-- Latest logs still show Facebook often `0`; fallback flow has now been strengthened for unauthenticated and consent-gated sessions.
+- Facebook can now yield high volume when runtime path is healthy; quality (title/VRM/mileage) still lags — see snapshot below.
 - Runtime/API pressure in Phase 2 + Phase 3 has been reduced with stricter top-slice gates and lower candidate caps.
 - Report now has explicit cart access (`Open cart`) plus a dedicated cart review panel.
 - Visible-plate VRM recovery has been improved with ANPR OCR confusion repair.
@@ -29,6 +29,11 @@
   - Facebook VRM coverage remains weak.
   - Positive-profit top case (`~£444`) remained OFFER (no BUY); decision-gate explainability needs explicit validation (MOT/DVSA/risk-gate effects).
   - ANPR call budget may be suppressing VRM recovery in top rows; verify against credit availability and gating thresholds.
+
+## GitHub / Claude Code
+- Source of truth: remote repo (e.g. `PresleySW/Dealerly-V1.0`). Clone → open folder in editor; AI uses **local clone**, not the website.
+- Do **not** commit `dealerly/.env` (gitignored). Restore secrets locally after clone; rotate leaked keys.
+- Master handoff prompt: `prompts/MASTER_PROMPT_OPUS.md`.
 
 ## Current Goal
 Outcompete sourcing-only tools by keeping Dealerly's USP as a decision-intelligence engine:
