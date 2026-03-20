@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python test_report.py)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(python -c \":*)",
+      "Bash(python -c \"import playwright; print\\(''playwright available''\\)\")",
+      "Bash(python -c \"from playwright.sync_api import sync_playwright; print\\(''sync_playwright ok''\\)\")",
+      "Bash(where python:*)",
+      "Bash(\"D:/Program Files \\(x86\\)/python.exe\" -c \"import requests; print\\(''requests ok''\\)\")",
+      "Bash(\"D:/Program Files \\(x86\\)/python.exe\" --version)",
+      "Bash(python -m dealerly.cli --help)",
+      "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(python run.py --help)",
+      "Bash(py -3.11 -c \"import requests; print\\(''ok''\\)\")",
+      "Bash(py -3.10 -c \"import requests; print\\(''ok''\\)\")",
+      "Bash(py -c \"import requests; print\\(''ok''\\); import sys; print\\(sys.executable\\)\")",
+      "Bash(py -0)",
+      "Bash(py -3.12 -c \"import requests; print\\(''ok''\\); import sys; print\\(sys.executable\\)\")",
+      "Bash(py -3.9 -c \"import requests; print\\(''ok''\\); import sys; print\\(sys.executable\\)\")",
+      "Bash(\"C:/Users/prest/AppData/Local/Programs/Python/Python312/python.exe\" -c \"import requests; print\\(''ok''\\); import sys; print\\(sys.executable\\)\")",
+      "Bash(\"D:/Program Files \\(x86\\)/python.exe\" -c \"import sys; print\\(sys.executable\\); print\\(sys.version\\)\")",
+      "Bash(\"D:/Program Files \\(x86\\)/python.exe\" -m pip show requests)",
+      "Bash(find D:/RHUL/Dealerly -name *.cfg -o -name requirements*.txt -o -name pyproject.toml -o -name setup.py)",
+      "Bash(ls C:/Users/prest/AppData/Local/spyder-*/)",
+      "Bash(ls -lah dealerly/*.py)",
+      "Bash(python -m py_compile dealerly/mot_formatter.py dealerly/report.py dealerly/cli.py)",
+      "Bash(ls \"D:\\\\RHUL\\\\Dealerly\\\\Dealerly 0.9\\\\logs\"\" -t 2>/dev/null | head -5 || ls \"D:RHULDealerlyDealerly 0.9\"\" -t)"
+    ]
+    "Deny": [
+    	"Bash(\"D:\RHUL\Dealerly\Dealerly 0.9\dealerly\.env")",
+    	"Bash(.env)"
+    	]
+  }
+}

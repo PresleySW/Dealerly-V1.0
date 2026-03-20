@@ -1,0 +1,28 @@
+# Dealerly Runtime Map and System Directives
+
+## Absolute Path Map
+- Codebase root: `D:/RHUL/Dealerly/Dealerly 0.9/`
+- Core package: `D:/RHUL/Dealerly/Dealerly 0.9/dealerly/`
+- SQLite database: `D:/RHUL/Dealerly/Dealerly 0.9/dealerly.db`
+- Obsidian vault: `D:/RHUL/Dealerly/Dealerly_Vault/`
+- Obsidian leads export target: `D:/RHUL/Dealerly/Dealerly_Vault/Leads/`
+
+## Sources of Truth
+Use these in strict priority order when instructions conflict:
+1. `CLAUDE.md` — primary architectural and coding-standard guide.
+2. `SPRINT_PLAN.md` — active development roadmap.
+3. `SPRINT_RUN.md` — current execution status and priority tracker.
+
+## Mandatory Engineering Rules
+- Apply surgical diffs only; do not rewrite entire files unless explicitly required.
+- Never modify `dealerly_log.csv` (production historical data).
+- Keep SQLite in WAL mode (`PRAGMA journal_mode=WAL`).
+- For Motors.co.uk Cloudflare/JS challenge handling, follow the Playwright fallback pattern used in `dealerly/facebook.py`.
+- Run validation with `python -m impeccable` after substantive edit batches.
+
+## Category S Intelligence Rule
+- Treat the following as equivalent high-risk salvage signals when scoring:
+  - `Category S`
+  - `Cat S`
+  - `categorys`
+  - `structural`

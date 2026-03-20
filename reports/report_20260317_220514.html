@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dealerly 0.9.6 — 2026-03-17 22:05</title>
+  <style>
+    body {font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;margin:0;padding:24px}
+    h1 {color:#1e3a5f;margin-bottom:4px} h2 {color:#1e3a5f}
+    .meta {color:#64748b;font-size:0.9em;margin-bottom:24px}
+    .stat-grid {display:flex;gap:16px;margin-bottom:32px;flex-wrap:wrap}
+    .stat-card {background:#fff;border-radius:10px;padding:16px 24px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+    .stat-card .val {font-size:2em;font-weight:700} .stat-card .lbl {font-size:0.8em;color:#64748b;margin-top:2px}
+    table {width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+    thead th {background:#1e3a5f;color:#fff;padding:10px 8px;font-size:0.85em}
+    tbody tr:nth-child(even) {background:#f1f5f9} tbody tr:hover {background:#e0f2fe}
+    code {background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:0.9em}
+    details summary::-webkit-details-marker {color:#1d4ed8}
+  </style>
+</head>
+<body>
+  <h1>🚗 Dealerly 0.9.6 — SWAutos Flip Report</h1>
+  <div class="meta">
+    2026-03-17 22:05 &nbsp;|&nbsp; Capital: £3000 &nbsp;|&nbsp; Band: £400–£2800
+    &nbsp;|&nbsp; eBay (production) | auction=False &nbsp;|&nbsp; Sources: ebay<span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:8px;font-size:0.8em;margin-left:6px">AutoTrader comps</span>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="val" style="color:#22c55e">0</div><div class="lbl">BUY signals</div></div>
+    <div class="stat-card"><div class="val" style="color:#f59e0b">8</div><div class="lbl">OFFER (negotiate)</div></div>
+    <div class="stat-card"><div class="val" style="color:#94a3b8">22</div><div class="lbl">PASS</div></div>
+    <div class="stat-card"><div class="val" style="color:#ef4444">62</div><div class="lbl">AVOID (high risk)</div></div>
+    <div class="stat-card"><div class="val">92</div><div class="lbl">Scored total</div></div>
+    <div class="stat-card"><div class="val" style="color:#0369a1">1/15 top · 6/32 all</div><div class="lbl">VRMs found</div></div>
+    <div class="stat-card"><div class="val" style="color:#0369a1">0/15 top · 4/32 all</div><div class="lbl">DVSA verified</div></div>
+  </div>
+  <h2>Top Opportunities</h2>
+  <table>
+    
+    <thead><tr style="background:#1e3a5f;color:#fff">
+      <th style="padding:10px 8px;font-size:0.85em">#</th>
+      <th style="padding:10px 8px;font-size:0.85em;text-align:left">Listing</th>
+      <th style="padding:10px 8px;font-size:0.85em">Buy Price</th>
+      <th style="padding:10px 8px;font-size:0.85em">Est. Resale</th>
+      <th style="padding:10px 8px;font-size:0.85em">Exp. Profit</th>
+      <th style="padding:10px 8px;font-size:0.85em">Max Bid</th>
+      <th style="padding:10px 8px;font-size:0.85em">Repairs</th>
+      <th style="padding:10px 8px;font-size:0.85em">p_MOT</th>
+    </tr></thead>
+    <tbody>
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">1</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/377036963395?_skw=ford+fiesta&amp;hash=item57c9277e43:g:E-cAAeSwdUVprZN4" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">2011 Ford Fiesta 1.4Tdci Van</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £1,500</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>✉ AI offer message (click to expand)</summary><div style='margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;font-family:sans-serif;white-space:pre-wrap'>Hi, I&#x27;d like to offer £1500 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3770369').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy message',1500)" style='margin-top:6px;font-size:0.78em;padding:3px 10px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer'>Copy message</button><span id='msg_v1|3770369' style='display:none'>Hi, I&#x27;d like to offer £1500 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</span></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1699</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2772</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£431</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1480</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#ef4444;font-weight:600'>77%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">2</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/306828018486?_skw=ford+fiesta&amp;hash=item4770600336:g:poEAAeSwGmhpubfy" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta 1.0 Full Mot Ideal First Car for Sale 2016 Drives Good Just Clean</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £2,250</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>✉ AI offer message (click to expand)</summary><div style='margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;font-family:sans-serif;white-space:pre-wrap'>Hi, I&#x27;d like to offer £2250 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3068280').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy message',1500)" style='margin-top:6px;font-size:0.78em;padding:3px 10px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer'>Copy message</button><span id='msg_v1|3068280' style='display:none'>Hi, I&#x27;d like to offer £2250 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</span></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2495</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3469</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£397</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2242</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £30<br><small>(worst £620)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#22c55e;font-weight:600'>90%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">3</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/127752224310?_skw=ford+fiesta&amp;hash=item1dbea03e36:g:a10AAeSwI0FptVV1" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta Eco boost 2017 Black 3 Door</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £2,100</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>✉ AI offer message (click to expand)</summary><div style='margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;font-family:sans-serif;white-space:pre-wrap'>Hi, I&#x27;d like to offer £2100 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|1277522').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy message',1500)" style='margin-top:6px;font-size:0.78em;padding:3px 10px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer'>Copy message</button><span id='msg_v1|1277522' style='display:none'>Hi, I&#x27;d like to offer £2100 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</span></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2395</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3444</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£353</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2098</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>86%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">4</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/287200873035?_skw=ford+fiesta&amp;hash=item42de818a4b:g:VL4AAeSwwYxptBY9" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">2015 Ford Fiesta Zetec – DAB / Sat Nav / Parking Sensors / Camera – 88k Miles</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <code>SAM92C</code> <small style='color:#888'>(regex_page_scrape, 75%)</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £1,450</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>✉ AI offer message (click to expand)</summary><div style='margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;font-family:sans-serif;white-space:pre-wrap'>Hi, I&#x27;d like to offer £1450 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|2872008').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy message',1500)" style='margin-top:6px;font-size:0.78em;padding:3px 10px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer'>Copy message</button><span id='msg_v1|2872008' style='display:none'>Hi, I&#x27;d like to offer £1450 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</span></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2000</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2731</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£93</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1443</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>80%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">5</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/306823129210?_skw=vauxhall+corsa&amp;hash=item477015687a:g:43MAAeSwqg1ptoVe" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Vauxhall Corsa  Sxi 2008 Petrol Manual ￼</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £650</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ 1.0–1.2: timing chain stretch £600+. Smoky diesels common.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>✉ AI offer message (click to expand)</summary><div style='margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;font-family:sans-serif;white-space:pre-wrap'>Hi, I&#x27;d like to offer £650 for the Vauxhall Corsa. Happy to collect at your convenience. Thanks.</div><button onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3068231').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy message',1500)" style='margin-top:6px;font-size:0.78em;padding:3px 10px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer'>Copy message</button><span id='msg_v1|3068231' style='display:none'>Hi, I&#x27;d like to offer £650 for the Vauxhall Corsa. Happy to collect at your convenience. Thanks.</span></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1250</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1916</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£72</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£672</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £170<br><small>(worst £700)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#ef4444;font-weight:600'>79%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">6</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/389736711015?_skw=vauxhall+corsa&amp;hash=item5abe1e4367:g:GrIAAeSwR51pswkq" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">vauxhall corsa 1.4 sxi</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £650</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ 1.0–1.2: timing chain stretch £600+. Smoky diesels common.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>✉ AI offer message (click to expand)</summary><div style='margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;font-family:sans-serif;white-space:pre-wrap'>Hi, I&#x27;d like to offer £650 for the Vauxhall Corsa. Happy to collect at your convenience. Thanks.</div><button onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3897367').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy message',1500)" style='margin-top:6px;font-size:0.78em;padding:3px 10px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer'>Copy message</button><span id='msg_v1|3897367' style='display:none'>Hi, I&#x27;d like to offer £650 for the Vauxhall Corsa. Happy to collect at your convenience. Thanks.</span></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1250</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1887</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£46</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£646</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £170<br><small>(worst £700)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>89%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">7</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/377022594864?_skw=ford+fiesta&amp;hash=item57c84c3f30:g:NeQAAeSwNC1pr-I8" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Mk6 Ford Fiesta Zetec Tdci 2007</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £-100</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£500</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1040</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£37</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£-113</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#ef4444;font-weight:600'>79%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">8</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/127740882629?_skw=vauxhall+corsa&amp;hash=item1dbdf32ec5:g:07sAAeSw6~tptLz-" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Vauxhall Corsa 1.2L Petrol 2009 5 Door Hatchback Manual</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £700</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ 1.0/1.2 petrol: timing chain stretch £600+. Coil packs. Otherwise OK.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1300</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1916</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£32</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£682</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £160<br><small>(worst £700)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#ef4444;font-weight:600'>79%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">9</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/306819977217?_skw=ford+focus&amp;hash=item476fe55001:g:tLMAAOSwOixoHgYM" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Focus MK2</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ Powershift auto: £1500+ rebuild. 1.6 TDCi: timing belt. Rear beam.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1750</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2350</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#ef4444">£-58</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1042</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £200<br><small>(worst £850)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>86%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">10</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/236682779783?_skw=ford+focus&amp;hash=item371b649c87:g:UDYAAeSwojBpsqLP" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Focus 1600 Sport 2011 Petrol Engine</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ Powershift auto: £1500+ rebuild. 1.6 TDCi: timing belt. Rear beam.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1295</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1843</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#ef4444">£-69</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£576</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £200<br><small>(worst £850)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>80%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">11</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/366261769119?_skw=ford+fiesta&amp;hash=item5546e7139f:g:aE8AAeSwQQppoy9n" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta Mk6.5 Climate Zetec 1.25</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1800</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2304</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#ef4444">£-101</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1049</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>89%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">12</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/389746354333?_skw=vauxhall+corsa&amp;hash=item5abeb1689d:g:hZUAAeSw-elppEBJ" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Vauxhall Corsa 1.2 Petrol (WG62NJV) - Manual - 5 Door - 65,740 miles</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ 1.0/1.2 petrol: timing chain stretch £600+. Coil packs. Otherwise OK.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1500</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1927</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#ef4444">£-157</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£693</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £160<br><small>(worst £700)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>89%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">13</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/236676200882?_skw=ford+focus&amp;hash=item371b0039b2:g:2gYAAeSwHbtpkOzs" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Focus Zetec S 1.6 Ti VCT 115BHP 2010 TOP SPEC,CLEAN,LOW MILES</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ Powershift auto: £1500+ rebuild. 1.6 TDCi: timing belt. Rear beam.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1395</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1843</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#ef4444">£-169</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£576</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £200<br><small>(worst £850)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#ef4444;font-weight:600'>76%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">14</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/389749123779?_skw=honda+jazz&amp;hash=item5abedbaac3:g:XNEAAeSw4h1ptgJu" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Honda Jazz 1246cc 5dr Petrol Manual Transmission Hatchback</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ CVT gearbox slip: £800–1500. Rust sills/rear arches. Generally very reliable.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1200</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1547</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#ef4444">£-167</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£383</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £120<br><small>(worst £600)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#22c55e;font-weight:600'>92%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">15</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/177945562044?_skw=ford+focus&amp;hash=item296e61cbbc:g:18cAAeSwPMFpiZdK" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Focus Zetec 2 Litre Petrol ( 2008 )</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ Powershift auto: £1500+ rebuild. 1.6 TDCi: timing belt. Rear beam.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1100</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1504</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#ef4444">£-187</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£263</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £200<br><small>(worst £850)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#ef4444;font-weight:600'>76%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr></tbody>
+  </table>
+  
+        <h2 style="margin-top:40px;color:#92400e">🔔 Near-Miss — Worth Negotiating</h2>
+        <p style="color:#78350f;font-size:0.9em">Listed just above your max bid. A polite offer may land these.</p>
+        <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;
+                      overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+          
+    <thead><tr style="background:#78350f;color:#fff">
+      <th style="padding:10px 8px;font-size:0.85em">#</th>
+      <th style="padding:10px 8px;font-size:0.85em;text-align:left">Listing</th>
+      <th style="padding:10px 8px;font-size:0.85em">Buy Price</th>
+      <th style="padding:10px 8px;font-size:0.85em">Est. Resale</th>
+      <th style="padding:10px 8px;font-size:0.85em">Exp. Profit</th>
+      <th style="padding:10px 8px;font-size:0.85em">Max Bid</th>
+      <th style="padding:10px 8px;font-size:0.85em">Repairs</th>
+      <th style="padding:10px 8px;font-size:0.85em">p_MOT</th>
+    </tr></thead>
+          <tbody>
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">1</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/389757408555?_skw=ford+fiesta&amp;hash=item5abf5a152b:g:a9QAAeSwnc1puCTD" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta 1.0T EcoBoost Zetec Hatchback 3dr Petrol Manual Euro 5 2013 RED</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <code>RV63FYS</code> <small style='color:#888'>(plate_recognizer, 94%)</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £1,250</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ 1.0 EcoBoost: coolant-to-cylinder head issue £600–1200. Check for mayo/overheating.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>📋 MOT history (13 tests — click to expand)</summary><div style='margin-top:6px'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Ford Fiesta &nbsp;|&nbsp; Red &nbsp;|&nbsp; Petrol &nbsp;|&nbsp; First used: 2013-09-30</div><table style='width:100%;font-size:0.82em;border-collapse:collapse'><thead><tr style='background:#1e3a5f;color:#fff'><th style='padding:4px 6px;text-align:left'>Date</th><th style='padding:4px 6px'>Result</th><th style='padding:4px 6px;text-align:right'>Mileage</th><th style='padding:4px 6px;text-align:left'>Notes</th></tr></thead><tbody><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2025-07-01</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>102,112 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Rear Registration plate deteriorated but not likely to be misread (0.1 (b))</li><li style='color:#92400e'>Nearside Front Shock absorbers has light misting of oil (5.3.2 (b))</li><li style='color:#92400e'>Offside Front Shock absorbers has light misting of oil (5.3.2 (b))</li><li style='color:#92400e'>Rear Axle swivel pins and bushes swivel pin and/or bush slightly worn (5.1.2 (b)</li></ul></td></tr><tr style='background:#fee2e2'><td style='padding:4px 6px;white-space:nowrap'>🔴 2025-07-01</td><td style='padding:4px 6px;font-weight:600'>FAILED</td><td style='padding:4px 6px;text-align:right'>102,112 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Rear Registration plate deteriorated but not likely to be misread (0.1 (b))</li><li style='color:#92400e'>Nearside Front Shock absorbers has light misting of oil (5.3.2 (b))</li><li style='color:#92400e'>Offside Front Shock absorbers has light misting of oil (5.3.2 (b))</li><li style='color:#92400e'>Rear Axle swivel pins and bushes swivel pin and/or bush slightly worn (5.1.2 (b)</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2024-07-01</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>90,237 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Brake pad(s) wearing thin (1.1.13 (a) (ii))</li><li style='color:#92400e'>Offside Front Brake pad(s) wearing thin (1.1.13 (a) (ii))</li><li style='color:#92400e'>Nearside Rear Coil spring corroded  (5.3.1 (b) (i))</li><li style='color:#92400e'>Offside Rear Coil spring corroded  (5.3.1 (b) (i))</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2023-07-14</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>74,167 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Nearside Front Shock absorbers has light misting of oil (5.3.2 (b))</li><li style='color:#92400e'>Offside Front Shock absorbers has light misting of oil (5.3.2 (b))</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2022-07-04</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>66,767 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Front Shock absorbers has light misting of oil nearside and offside (5.3.2 (b))</li><li style='color:#92400e'>Rear Axle swivel pins and bushes swivel pin and/or bush slightly worn nearside a</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2021-06-17</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>58,767 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Front Brake disc worn, but not excessively offside and nearside (1.1.14 (a) (i))</li><li style='color:#92400e'>Rear Axle swivel pins and bushes swivel pin and/or bush slightly worn offside an</li></ul></td></tr><tr style='background:#fee2e2'><td style='padding:4px 6px;white-space:nowrap'>🔴 2021-06-17</td><td style='padding:4px 6px;font-weight:600'>FAILED</td><td style='padding:4px 6px;text-align:right'>58,767 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Front Brake disc worn, but not excessively offside and nearside (1.1.14 (a) (i))</li><li style='color:#92400e'>Rear Axle swivel pins and bushes swivel pin and/or bush slightly worn offside an</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2020-07-15</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>52,577 MI</td><td style='padding:4px 6px'></td></tr></tbody></table></div></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1400</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2552</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£478</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1228</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £200<br><small>(worst £950)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>80%</span><br><small style='color:#0369a1'>✓ DVSA</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">2</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/177948252246?_skw=ford+fiesta&amp;hash=item296e8ad856:g:JVsAAeSwJ9NpsVJ6" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta 1.4 Freedom 5dr</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp; &nbsp;VRM: <code>ET06YRD</code> <small style='color:#888'>(plate_recognizer, 75%)</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £1,100</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>📋 MOT history (24 tests — click to expand)</summary><div style='margin-top:6px'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Ford Fiesta &nbsp;|&nbsp; Black &nbsp;|&nbsp; Petrol &nbsp;|&nbsp; First used: 2006-08-02</div><table style='width:100%;font-size:0.82em;border-collapse:collapse'><thead><tr style='background:#1e3a5f;color:#fff'><th style='padding:4px 6px;text-align:left'>Date</th><th style='padding:4px 6px'>Result</th><th style='padding:4px 6px;text-align:right'>Mileage</th><th style='padding:4px 6px;text-align:left'>Notes</th></tr></thead><tbody><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2026-03-05</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>61,223 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Outer Brake pad(s) wearing thin (1.1.13 (a) (ii))</li></ul></td></tr><tr style='background:#fee2e2'><td style='padding:4px 6px;white-space:nowrap'>🔴 2026-03-04</td><td style='padding:4px 6px;font-weight:600'>FAILED</td><td style='padding:4px 6px;text-align:right'>61,223 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em'><li style='color:#991b1b'>Fuel cap/sealing device ineffective (6.1.3 (b) (i))</li><li style='color:#991b1b'>Nearside Front Headlamp insecure (4.1.1 (c))</li><li style='color:#991b1b'>Nearside Front Headlamp not working on dipped beam (4.1.1 (a) (ii))</li></ul><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Outer Brake pad(s) wearing thin (1.1.13 (a) (ii))</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2025-03-21</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>50,625 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Oil leak, but not excessive (8.4.1 (a) (i))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2023-11-29</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>44,884 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Front Oil leak, but not excessive (8.4.1 (a) (i))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li></ul></td></tr><tr style='background:#fee2e2'><td style='padding:4px 6px;white-space:nowrap'>🔴 2023-11-29</td><td style='padding:4px 6px;font-weight:600'>FAILED</td><td style='padding:4px 6px;text-align:right'>44,884 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em'><li style='color:#991b1b'>Offside Front Headlamp not working on dipped beam (4.1.1 (a) (ii))</li></ul><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Front Oil leak, but not excessive (8.4.1 (a) (i))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2022-12-05</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>37,848 MI</td><td style='padding:4px 6px'></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2019-08-08</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>37,142 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Rear Registration plate deteriorated but not likely to be misread (0.1 (b))</li><li style='color:#92400e'>Nearside Front Tyre slightly damaged/cracking or perishing (5.2.3 (d) (ii))</li><li style='color:#92400e'>Offside Rear Tyre slightly damaged/cracking or perishing (5.2.3 (d) (ii))</li></ul></td></tr><tr style='background:#fee2e2'><td style='padding:4px 6px;white-space:nowrap'>🔴 2019-08-08</td><td style='padding:4px 6px;font-weight:600'>FAILED</td><td style='padding:4px 6px;text-align:right'>37,142 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Rear Registration plate deteriorated but not likely to be misread (0.1 (b))</li><li style='color:#92400e'>Nearside Front Tyre slightly damaged/cracking or perishing (5.2.3 (d) (ii))</li><li style='color:#92400e'>Offside Rear Tyre slightly damaged/cracking or perishing (5.2.3 (d) (ii))</li></ul></td></tr></tbody></table></div></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1295</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2369</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£464</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1109</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#ef4444;font-weight:600'>79%</span><br><small style='color:#0369a1'>✓ DVSA</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">3</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/336485918346?_skw=vauxhall+corsa&amp;hash=item4e581fa68a:g:mz0AAeSwRJJpoKxJ" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">2014 Vauxhall Corsa 1.2 Limited Edition 3dr HATCHBACK Petrol Manual</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <code>GF63OWY</code> <small style='color:#888'>(plate_recognizer+dvla_validated, 95%)</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £900</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ 1.0/1.2 petrol: timing chain stretch £600+. Coil packs. Otherwise OK.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>📋 MOT history (9 tests — click to expand)</summary><div style='margin-top:6px'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Vauxhall Corsa &nbsp;|&nbsp; Orange &nbsp;|&nbsp; Petrol &nbsp;|&nbsp; First used: 2014-01-02</div><table style='width:100%;font-size:0.82em;border-collapse:collapse'><thead><tr style='background:#1e3a5f;color:#fff'><th style='padding:4px 6px;text-align:left'>Date</th><th style='padding:4px 6px'>Result</th><th style='padding:4px 6px;text-align:right'>Mileage</th><th style='padding:4px 6px;text-align:left'>Notes</th></tr></thead><tbody><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2025-04-04</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>106,379 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>sill covers fitted</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2024-04-10</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>90,185 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Brake disc worn, pitted or scored, but not seriously weakened (1.</li><li style='color:#92400e'>Offside Front Brake disc worn, pitted or scored, but not seriously weakened (1.1</li><li style='color:#92400e'>Nearside Rear Tyre slightly damaged/cracking or perishing 215/45/17 (5.2.3 (d) (</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2022-12-13</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>80,847 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Brake pad(s) wearing thin (1.1.13 (a) (ii))</li><li style='color:#92400e'>Nearside Front Brake pad(s) wearing thin (1.1.13 (a) (ii))</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2021-12-13</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>67,522 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Front Brake pad(s) wearing thin (1.1.13 (a) (ii))</li><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2020-12-16</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>56,282 MI</td><td style='padding:4px 6px'></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2019-06-14</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>44,008 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Tyre slightly damaged/cracking or perishing perishing (5.2.3 (d) </li><li style='color:#92400e'>Nearside Rear Tyre slightly damaged/cracking or perishing perishing (5.2.3 (d) (</li><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge low on edges (5.2.3 (</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2018-06-19</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>38,916 MI</td><td style='padding:4px 6px'></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2016-12-22</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>28,831 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Rear Nail in tyre</li></ul></td></tr></tbody></table></div></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1100</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2151</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£449</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£899</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £160<br><small>(worst £700)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>80%</span><br><small style='color:#0369a1'>✓ DVSA</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">4</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/377036963395?_skw=ford+fiesta&amp;hash=item57c9277e43:g:E-cAAeSwdUVprZN4" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">2011 Ford Fiesta 1.4Tdci Van</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £1,500</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>✉ AI offer message (click to expand)</summary><div style='margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;font-family:sans-serif;white-space:pre-wrap'>Hi, I&#x27;d like to offer £1500 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3770369').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy message',1500)" style='margin-top:6px;font-size:0.78em;padding:3px 10px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer'>Copy message</button><span id='msg_v1|3770369' style='display:none'>Hi, I&#x27;d like to offer £1500 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</span></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1699</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2772</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£431</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1480</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#ef4444;font-weight:600'>77%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">5</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/306828018486?_skw=ford+fiesta&amp;hash=item4770600336:g:poEAAeSwGmhpubfy" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta 1.0 Full Mot Ideal First Car for Sale 2016 Drives Good Just Clean</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £2,250</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>✉ AI offer message (click to expand)</summary><div style='margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;font-family:sans-serif;white-space:pre-wrap'>Hi, I&#x27;d like to offer £2250 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3068280').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy message',1500)" style='margin-top:6px;font-size:0.78em;padding:3px 10px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer'>Copy message</button><span id='msg_v1|3068280' style='display:none'>Hi, I&#x27;d like to offer £2250 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</span></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2495</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3469</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£397</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2242</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £30<br><small>(worst £620)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#22c55e;font-weight:600'>90%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">6</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/327040174580?_skw=ford+fiesta&amp;hash=item4c251d09f4:g:4tEAAeSwrWhppINV" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">2013 Ford Fiesta Zetec 1242 cc</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp; &nbsp;VRM: <code>YK13LCJ</code> <small style='color:#888'>(plate_recognizer, 75%)</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £1,400</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>📋 MOT history (14 tests — click to expand)</summary><div style='margin-top:6px'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Ford Fiesta &nbsp;|&nbsp; Red &nbsp;|&nbsp; Petrol &nbsp;|&nbsp; First used: 2013-03-01</div><table style='width:100%;font-size:0.82em;border-collapse:collapse'><thead><tr style='background:#1e3a5f;color:#fff'><th style='padding:4px 6px;text-align:left'>Date</th><th style='padding:4px 6px'>Result</th><th style='padding:4px 6px;text-align:right'>Mileage</th><th style='padding:4px 6px;text-align:left'>Notes</th></tr></thead><tbody><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2026-01-26</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>104,418 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Offside Front Service brake binding but not excessively (1.2.1 (f))</li><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Nearside Rear Tyre slightly damaged/cracking or perishing TYRE DATE SHOWS TYRE I</li></ul></td></tr><tr style='background:#fee2e2'><td style='padding:4px 6px;white-space:nowrap'>🔴 2026-01-23</td><td style='padding:4px 6px;font-weight:600'>FAILED</td><td style='padding:4px 6px;text-align:right'>104,477 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em'><li style='color:#991b1b'>Nearside Headlamp insecure (4.1.1 (c))</li><li style='color:#991b1b'>Nearside Headlamp aim projected beam image is obviously incorrect (4.1.2 (c))</li><li style='color:#991b1b'>Offside Headlamp aim projected beam image is obviously incorrect (4.1.2 (c))</li></ul><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Offside Front Service brake binding but not excessively (1.2.1 (f))</li><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Nearside Rear Tyre slightly damaged/cracking or perishing TYRE DATE SHOWS TYRE I</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2025-01-30</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>101,818 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge 195/55/15 (5.2.3 (e))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Nearside Rear Inner Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Offside Rear Inner Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li></ul></td></tr><tr style='background:#fee2e2'><td style='padding:4px 6px;white-space:nowrap'>🔴 2025-01-29</td><td style='padding:4px 6px;font-weight:600'>FAILED</td><td style='padding:4px 6px;text-align:right'>101,818 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em'><li style='color:#991b1b'>Emissions unable to be completed exhaust leak (8.2.2.2 (e))</li><li style='color:#991b1b'>Rear Exhaust emissions likely to be affected by an exhaust leak silencer (8.2.2.</li><li style='color:#991b1b'>Nearside Rear Axle swivel pins and bushes swivel pin and/or bush excessively wor</li></ul><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge 195/55/15 (5.2.3 (e))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Nearside Rear Inner Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Offside Rear Inner Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2024-01-30</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>97,623 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em;list-style-type:"⚠ "'><li style='color:#92400e'>Rear Exhaust has a minor leak of exhaust gases Silencer leaking (6.1.2 (a))</li><li style='color:#92400e'>Offside Front Tyre slightly damaged/cracking or perishing (5.2.3 (d) (ii))</li><li style='color:#92400e'>Nearside Front Tyre slightly damaged/cracking or perishing (5.2.3 (d) (ii))</li><li style='color:#92400e'>Nearside Front Outer Tyre worn close to legal limit/worn on edge Edge (5.2.3 (e)</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2022-11-09</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>93,074 MI</td><td style='padding:4px 6px'></td></tr><tr style='background:#fee2e2'><td style='padding:4px 6px;white-space:nowrap'>🔴 2022-10-27</td><td style='padding:4px 6px;font-weight:600'>FAILED</td><td style='padding:4px 6px;text-align:right'>92,731 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em'><li style='color:#991b1b'>Offside Front Service brake excessively binding (1.2.1 (f))</li><li style='color:#991b1b'>Rear Rear fog lamp not working (4.5.1 (a) (ii))</li></ul></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2021-11-19</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>89,410 MI</td><td style='padding:4px 6px'></td></tr></tbody></table></div></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1650</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2663</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£380</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1380</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>80%</span><br><small style='color:#0369a1'>✓ DVSA</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">7</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/127752224310?_skw=ford+fiesta&amp;hash=item1dbea03e36:g:a10AAeSwI0FptVV1" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta Eco boost 2017 Black 3 Door</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;color:#f59e0b;font-weight:600;font-size:0.85em'>→ Offer around: £2,100</div><div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details style='margin-top:6px;font-size:0.82em'><summary style='cursor:pointer;color:#1d4ed8;user-select:none'>✉ AI offer message (click to expand)</summary><div style='margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;font-family:sans-serif;white-space:pre-wrap'>Hi, I&#x27;d like to offer £2100 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|1277522').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy message',1500)" style='margin-top:6px;font-size:0.78em;padding:3px 10px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer'>Copy message</button><span id='msg_v1|1277522' style='display:none'>Hi, I&#x27;d like to offer £2100 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</span></details>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2395</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3444</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#f59e0b">£353</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2098</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>86%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr></tbody>
+        </table>
+  
+        <details style="margin-top:40px">
+          <summary style="cursor:pointer;color:#ef4444;font-weight:700;font-size:1.1em;
+                          user-select:none;padding:8px 0">
+            ⚠ AVOID — High Risk (10 listings) — click to expand
+          </summary>
+          <p style="color:#991b1b;font-size:0.9em;margin-top:8px">
+            These listings triggered fraud flags, extreme shock ratios, or other risk signals.
+            Shown for reference only — do not bid without thorough inspection.
+          </p>
+          <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;
+                        overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);opacity:0.85">
+            
+    <thead><tr style="background:#991b1b;color:#fff">
+      <th style="padding:10px 8px;font-size:0.85em">#</th>
+      <th style="padding:10px 8px;font-size:0.85em;text-align:left">Listing</th>
+      <th style="padding:10px 8px;font-size:0.85em">Buy Price</th>
+      <th style="padding:10px 8px;font-size:0.85em">Est. Resale</th>
+      <th style="padding:10px 8px;font-size:0.85em">Exp. Profit</th>
+      <th style="padding:10px 8px;font-size:0.85em">Max Bid</th>
+      <th style="padding:10px 8px;font-size:0.85em">Repairs</th>
+      <th style="padding:10px 8px;font-size:0.85em">p_MOT</th>
+    </tr></thead>
+            <tbody>
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">1</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/406765982366?_skw=ford+fiesta&amp;hash=item5eb524529e:g:EicAAeSwH4JptTDP" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta 2013 Diesel</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> &nbsp;<span style="color:#ef4444;font-size:0.78em">✗ ULEZ fail</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1400</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£4220</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#22c55e">£2062</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2812</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>83%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">2</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/287212208337?_skw=ford+fiesta&amp;hash=item42df2e80d1:g:PKIAAeSwJwZpuYb-" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">2011 Ford Fiesta Zetec Manual 1.25L, 5 Door</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1100</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3395</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#22c55e">£1603</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2053</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>83%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">3</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/287199217808?_skw=ford+fiesta&amp;hash=item42de684890:g:0u0AAeSwH4Rps1tN" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta Edge 2010 full service history</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1250</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3395</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#22c55e">£1573</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2173</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £30<br><small>(worst £615)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>81%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">4</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/157753729902?_skw=ford+fiesta&amp;hash=item24badae36e:g:ZtIAAeSwKhJptY2H" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta 2010 Titanium Model 1.4 Petrol 5 Door</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ Duratec petrol: very reliable. Clutch at 80k+ £350. Minor rust on pre-2012.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1695</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3759</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#22c55e">£1353</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2398</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £140<br><small>(worst £550)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#ef4444;font-weight:600'>79%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">5</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/127739427188?_skw=ford+fiesta&amp;hash=item1dbddcf974:g:XlMAAeSwwRlptBHH" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta Zetec 5door Hatch 1.2 Petrol 2012</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ Duratec petrol: very reliable. Clutch at 80k+ £350. Minor rust on pre-2012.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1700</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3759</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#22c55e">£1348</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2398</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £140<br><small>(worst £550)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>83%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">6</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/366273945051?_skw=ford+fiesta&amp;hash=item5547a0dddb:g:N-cAAeSwx-RptYLt" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta 2010 Zetec 1.25</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1495</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3395</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#22c55e">£1208</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2053</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#ef4444;font-weight:600'>79%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">7</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/377031840095?_skw=ford+fiesta&amp;hash=item57c8d9515f:g:blUAAeSw5GFptCmO" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Fiesta 2012 1.2 Edge</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1500</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3395</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#22c55e">£1203</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2053</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>83%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">8</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/177960301992?_skw=ford+fiesta&amp;hash=item296f42b5a8:g:A1oAAeSwzORptbZx" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">2012 Ford Fiesta Zetec ECOnetic II 1.6TDCi 3dr 5-Speed Manual</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> &nbsp; &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1500</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3395</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#22c55e">£1203</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2053</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £150<br><small>(worst £650)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>83%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">9</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/168242086595?_skw=ford+focus&amp;hash=item272c0282c3:g:gCcAAeSwG55pucjj" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">Ford Focus 1.0L EcoBoost 2016 Petrol</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <small style='color:#aaa'>no VRM</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ 1.0 EcoBoost: coolant-to-cylinder head issue. Same as Fiesta.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2000</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3880</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#22c55e">£1100</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£2450</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £200<br><small>(worst £950)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>83%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 8px;vertical-align:top;font-weight:600;color:#64748b">10</td>
+          <td style="padding:12px 8px;vertical-align:top">
+            <a href="https://www.ebay.co.uk/itm/127741453281?_skw=vauxhall+corsa&amp;hash=item1dbdfbe3e1:g:2gAAAeSwtElpdy48" target="_blank"
+               style="color:#1d4ed8;text-decoration:none;font-weight:600">vauxhall corsa griffin 2019</a>
+            <div style="margin-top:4px;font-size:0.82em;color:#64748b">
+              <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> &nbsp;<span style="color:#22c55e;font-size:0.78em">✓ ULEZ</span> &nbsp;VRM: <code>HAS2X</code> <small style='color:#888'>(regex_description, 75%)</small>
+            </div>
+            <div style='margin-top:3px;font-size:0.78em;color:#92400e'>⚠ 1.0–1.2: timing chain stretch £600+. Smoky diesels common.</div>
+          </td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1700</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£3286</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-weight:700;color:#22c55e">£883</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top">£1933</td>
+          <td style="padding:12px 8px;text-align:right;vertical-align:top;font-size:0.85em;color:#64748b">
+            £170<br><small>(worst £700)</small>
+          </td>
+          <td style="padding:12px 8px;text-align:center;vertical-align:top;font-size:0.85em;color:#64748b"><span style='color:#f59e0b;font-weight:600'>83%</span><br><small style='color:#94a3b8'>est.</small></td>
+        </tr></tbody>
+          </table>
+        </details>
+  <p style="margin-top:40px;color:#94a3b8;font-size:0.8em">
+    Dealerly 0.9.6 — SWAutos &nbsp;|&nbsp; Estimates only. Always verify before bidding.
+  </p>
+</body>
+</html>

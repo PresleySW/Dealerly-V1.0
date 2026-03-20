@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dealerly 0.9.7 — 2026-03-18 01:44</title>
+  <style>
+:root {
+  --bg:#f1f5f9; --surface:#fff; --surface2:#f8fafc;
+  --text:#0f172a; --dim:#64748b; --border:#e2e8f0;
+  --hover:#e2e8f0; --link:#1d4ed8;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+}
+[data-theme=dark] {
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d;
+  --text:#e6edf3; --dim:#8b949e; --border:#30363d;
+  --hover:#1f2937; --link:#58a6ff;
+  --shadow:0 1px 3px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+     background:var(--bg);color:var(--text);padding:20px 24px;line-height:1.4}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+code{background:var(--surface2);padding:2px 5px;border-radius:4px;font-size:.88em}
+small{font-size:.8em;color:var(--dim)}
+
+/* header */
+.page-header{display:flex;align-items:center;justify-content:space-between;
+             margin-bottom:6px;flex-wrap:wrap;gap:8px}
+h1{font-size:1.4em}
+.dark-toggle{padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);
+             background:var(--surface);color:var(--text);cursor:pointer;
+             font-size:.85em;font-weight:600;transition:all .12s}
+.dark-toggle:hover{border-color:var(--dim)}
+.meta{color:var(--dim);font-size:.88em;margin-bottom:24px}
+
+/* stat cards */
+.stat-grid{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.stat-card{background:var(--surface);border-radius:10px;padding:14px 18px;
+           box-shadow:var(--shadow);min-width:100px}
+.stat-card .sv{font-size:1.7em;font-weight:700;line-height:1.1}
+.stat-card .sl{font-size:.73em;color:var(--dim);margin-top:3px}
+
+/* section titles */
+.section-title{font-size:1.05em;font-weight:700;margin:28px 0 12px;color:var(--text)}
+
+/* top-3 grid */
+.top3-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+           gap:14px;margin-bottom:4px}
+
+/* filter bar */
+.filter-bar{background:var(--surface);border-radius:10px;padding:12px 16px;
+            box-shadow:var(--shadow);margin-bottom:16px;
+            display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.filter-group{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.filter-label{font-size:.75em;font-weight:700;color:var(--dim);
+              text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.fbtn{padding:5px 12px;border-radius:7px;border:1.5px solid var(--border);
+      background:var(--surface2);color:var(--text);cursor:pointer;
+      font-size:.82em;font-weight:600;transition:all .12s}
+.fbtn:hover{border-color:var(--dim)}
+.fbtn.active{color:#fff;border-color:transparent}
+.fbtn[data-v=BUY].active{background:#22c55e}
+.fbtn[data-v=OFFER].active{background:#f59e0b}
+.fbtn[data-v=PASS].active{background:#94a3b8}
+.profit-range{display:flex;align-items:center;gap:4px}
+.profit-range input{width:70px;padding:4px 6px;border-radius:6px;
+                    border:1.5px solid var(--border);background:var(--surface2);
+                    color:var(--text);font-size:.82em}
+.sort-sel{padding:5px 10px;border-radius:7px;border:1.5px solid var(--border);
+          background:var(--surface2);color:var(--text);font-size:.82em;cursor:pointer}
+
+/* cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.card{background:var(--surface);border-radius:10px;box-shadow:var(--shadow);
+      display:flex;overflow:hidden;transition:box-shadow .15s}
+.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.13)}
+.card.hidden{display:none!important}
+
+/* thumbnail */
+.thumb-wrap{flex-shrink:0;width:120px;background:var(--surface2);
+            display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb{width:120px;height:90px;object-fit:cover;display:block}
+.thumb-empty{width:120px;height:90px;display:flex;align-items:center;
+             justify-content:center;font-size:1.8em;color:var(--dim)}
+.compact .thumb-wrap{width:80px}
+.compact .thumb,.compact .thumb-empty{width:80px;height:60px}
+
+/* card body */
+.card-body{flex:1;padding:12px 14px;min-width:0}
+.card-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.rank{font-size:.75em;font-weight:700;color:var(--dim)}
+.card-meta{font-size:.74em;color:var(--dim);margin-left:auto}
+.card-title{display:block;font-weight:600;font-size:.9em;margin-bottom:8px;
+            color:var(--link);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* numbers row */
+.num-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:7px}
+.num{display:flex;flex-direction:column}
+.nv{font-size:.9em;font-weight:700}
+.nl{font-size:.68em;color:var(--dim);margin-top:1px}
+.profit-good{color:#22c55e}
+.profit-mid{color:#f59e0b}
+.profit-bad{color:#ef4444}
+
+/* tags */
+.tag-ulez-ok{font-size:.75em;color:#22c55e;font-weight:600}
+.tag-ulez-fail{font-size:.75em;color:#ef4444;font-weight:600}
+.warn{color:#f59e0b;font-weight:600}
+.dim{color:var(--dim)}
+
+/* vrm */
+.vrm-row{font-size:.82em;margin-bottom:5px;display:flex;align-items:center;
+         flex-wrap:wrap;gap:4px}
+.vrm-form{display:inline-flex;gap:4px;align-items:center}
+.vrm-input{padding:3px 6px;border-radius:5px;border:1.5px solid var(--border);
+           background:var(--surface2);color:var(--text);font-size:.9em;width:88px}
+.vrm-btn{padding:3px 8px;border-radius:5px;border:1.5px solid var(--border);
+         background:var(--surface);color:var(--text);cursor:pointer;font-size:.8em}
+.vrm-saved{font-weight:700;color:#22c55e}
+
+/* hints */
+.offer-hint{font-size:.82em;font-weight:600;color:#f59e0b;margin-bottom:4px}
+.offer-hint.ok{color:#22c55e}
+.repair-note{font-size:.76em;color:#92400e;margin-bottom:4px;padding:3px 7px;
+             background:#fef3c7;border-radius:4px}
+[data-theme=dark] .repair-note{background:#2d1f00;color:#fbbf24}
+
+/* expandables */
+.expandable{margin-top:6px}
+.expandable summary{cursor:pointer;font-size:.8em;color:var(--link);
+                    user-select:none;list-style:none;display:inline-flex;
+                    align-items:center;gap:4px}
+.expandable summary::-webkit-details-marker{display:none}
+.expandable summary::before{content:'b6';font-size:.65em;
+                             display:inline-block;transition:transform .15s}
+.expandable[open] summary::before{transform:rotate(90deg)}
+.expand-body{margin-top:6px;font-size:.82em;line-height:1.5;
+             background:var(--surface2);border-radius:6px;
+             padding:8px 10px;border:1px solid var(--border)}
+.copy-btn{margin-top:5px;padding:3px 10px;border-radius:5px;
+          border:1px solid var(--border);background:var(--surface);
+          color:var(--text);cursor:pointer;font-size:.78em}
+
+/* near-miss grid */
+.nearmiss-grid{display:grid;
+               grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+               gap:10px;margin-top:8px}
+
+/* avoid toggle */
+.avoid-toggle{cursor:pointer;color:#ef4444;font-weight:700;font-size:1em;
+              user-select:none;padding:8px 0;margin-top:28px;display:block}
+
+/* footer */
+.footer{margin-top:36px;color:var(--dim);font-size:.78em;
+        border-top:1px solid var(--border);padding-top:12px}
+</style>
+  <script>
+    /* Apply saved/preferred theme before first paint (avoids flash) */
+    (function(){
+      const s = localStorage.getItem('dealerly_theme');
+      const p = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', s || p);
+    })();
+  </script>
+</head>
+<body>
+  <div class="page-header">
+    <h1>🚗 Dealerly 0.9.7 — SWAutos Flip Report</h1>
+    <button class="dark-toggle" id="dark-btn" onclick="toggleDark()">☾ Dark</button>
+  </div>
+  <p class="meta">
+    2026-03-18 01:44 &nbsp;|&nbsp; Capital: £3000
+    &nbsp;|&nbsp; Band: £800–£2500
+    &nbsp;|&nbsp; eBay (production) | auction=False | AI=claude
+    &nbsp;|&nbsp; Sources: ebay <span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:8px;font-size:.78em">AutoTrader</span>
+  </p>
+  <div class="stat-grid"><div class="stat-card"><div class="sv" style="color:#22c55e">1</div><div class="sl">BUY</div></div><div class="stat-card"><div class="sv" style="color:#f59e0b">2</div><div class="sl">OFFER</div></div><div class="stat-card"><div class="sv" style="color:#94a3b8">2</div><div class="sl">PASS</div></div><div class="stat-card"><div class="sv" style="color:#ef4444">1</div><div class="sl">AVOID</div></div><div class="stat-card"><div class="sv">6</div><div class="sl">Scored</div></div><div class="stat-card"><div class="sv" style="color:#0369a1">4/5 top · 6/7 all</div><div class="sl">VRMs found</div></div><div class="stat-card"><div class="sv" style="color:#0369a1">0/5 top · 0/7 all</div><div class="sl">DVSA verified</div></div></div>
+  <div class="section-title">⚡ Top 3 — Act Now</div><div class="top3-grid"><div class="card featured" data-decision="BUY" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="540" data-price="2100" data-pmot="0.9400" data-item="111" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/example/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/example/s-l1600.jpg" alt="2019 Honda Jazz 1.3 i-VTEC SE 5dr Petrol Manual 55k" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2019 · 55k · TW20</span></div>
+    <a href="https://www.ebay.co.uk/itm/111" target="_blank" class="card-title">2019 Honda Jazz 1.3 i-VTEC SE 5dr Petrol Manual 55k</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2100</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£3100</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£540</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1950</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£180<small style="font-weight:400"> (w/c £350)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#22c55e;font-weight:700'>94%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-111f'>LK19ABC</code> <small class='dim'>(plate_recognizer, 91%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,950</strong></div>
+  </div>
+</div>
+<div class="card featured" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="420" data-price="1950" data-pmot="0.8900" data-item="222" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/example/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/example/s-l1600.jpg" alt="2018 Toyota Yaris 1.5 Hybrid Icon 5dr Auto 42k Miles" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#2</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2018 · 42k · TW20</span></div>
+    <a href="https://www.ebay.co.uk/itm/222" target="_blank" class="card-title">2018 Toyota Yaris 1.5 Hybrid Icon 5dr Auto 42k Miles</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1950</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2900</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£420</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1800</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£200<small style="font-weight:400"> (w/c £420)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>89%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-222f'>SF18XYZ</code> <small class='dim'>(regex_description, 88%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,800</strong></div>
+  </div>
+</div>
+<div class="card featured" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="280" data-price="1400" data-pmot="0.8200" data-item="333" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#3</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2017 · 78k · TW20</span></div>
+    <a href="https://www.ebay.co.uk/itm/333" target="_blank" class="card-title">2017 Ford Fiesta 1.0 EcoBoost Titanium 5dr 78k</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1400</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2200</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£280</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1300</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£300<small style="font-weight:400"> (w/c £600)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>82%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-333f'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"333","333f")'><input class='vrm-input' id='vrm-inp-333f' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,300</strong></div>
+  </div>
+</div></div>
+  <div class="section-title">All Listings <span style="color:var(--dim);font-weight:400;font-size:.85em">(5)</span></div><div class="filter-bar"><div class="filter-group"><span class="filter-label">Decision</span><button class="fbtn active" data-v="ALL" onclick="setFilter('dec','ALL',this)">All</button><button class="fbtn" data-v="BUY"   onclick="setFilter('dec','BUY',this)">BUY</button><button class="fbtn" data-v="OFFER" onclick="setFilter('dec','OFFER',this)">OFFER</button><button class="fbtn" data-v="PASS"  onclick="setFilter('dec','PASS',this)">PASS</button></div><div class="filter-group"><span class="filter-label">ULEZ</span><button class="fbtn active" data-v="ALL" onclick="setFilter('ulez','ALL',this)">All</button><button class="fbtn" data-v="yes" onclick="setFilter('ulez','yes',this)">✓ ULEZ</button><button class="fbtn" data-v="no"  onclick="setFilter('ulez','no',this)">Fail</button></div><div class="filter-group"><span class="filter-label">VRM</span><button class="fbtn active" data-v="ALL" onclick="setFilter('vrm','ALL',this)">All</button><button class="fbtn" data-v="yes" onclick="setFilter('vrm','yes',this)">Found</button><button class="fbtn" data-v="no"  onclick="setFilter('vrm','no',this)">Missing</button></div><div class="filter-group"><span class="filter-label">Profit £</span><div class="profit-range"><input type="number" id="prof-min" placeholder="min" oninput="setProfitRange()"><span style="color:var(--dim)">–</span><input type="number" id="prof-max" placeholder="max" oninput="setProfitRange()"></div></div><div class="filter-group"><span class="filter-label">Sort</span><select class="sort-sel" onchange="setSort(this)"><option value="profit_desc">Profit ↓</option><option value="profit_asc">Profit ↑</option><option value="price_asc">Price ↑</option><option value="price_desc">Price ↓</option><option value="pmot_desc">p_MOT ↓</option></select></div><span id="result-count" style="font-size:.8em;color:var(--dim);margin-left:auto"></span></div><div class="card-grid" id="main-grid"><div class="card" data-decision="BUY" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="540" data-price="2100" data-pmot="0.9400" data-item="111" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/example/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/example/s-l1600.jpg" alt="2019 Honda Jazz 1.3 i-VTEC SE 5dr Petrol Manual 55k" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2019 · 55k · TW20</span></div>
+    <a href="https://www.ebay.co.uk/itm/111" target="_blank" class="card-title">2019 Honda Jazz 1.3 i-VTEC SE 5dr Petrol Manual 55k</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2100</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£3100</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£540</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1950</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£180<small style="font-weight:400"> (w/c £350)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#22c55e;font-weight:700'>94%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-111'>LK19ABC</code> <small class='dim'>(plate_recognizer, 91%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,950</strong></div>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="420" data-price="1950" data-pmot="0.8900" data-item="222" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/example/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/example/s-l1600.jpg" alt="2018 Toyota Yaris 1.5 Hybrid Icon 5dr Auto 42k Miles" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#2</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2018 · 42k · TW20</span></div>
+    <a href="https://www.ebay.co.uk/itm/222" target="_blank" class="card-title">2018 Toyota Yaris 1.5 Hybrid Icon 5dr Auto 42k Miles</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1950</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2900</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£420</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1800</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£200<small style="font-weight:400"> (w/c £420)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>89%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-222'>SF18XYZ</code> <small class='dim'>(regex_description, 88%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,800</strong></div>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="280" data-price="1400" data-pmot="0.8200" data-item="333" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#3</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2017 · 78k · TW20</span></div>
+    <a href="https://www.ebay.co.uk/itm/333" target="_blank" class="card-title">2017 Ford Fiesta 1.0 EcoBoost Titanium 5dr 78k</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1400</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2200</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£280</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1300</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£300<small style="font-weight:400"> (w/c £600)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>82%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-333'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"333","333")'><input class='vrm-input' id='vrm-inp-333' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,300</strong></div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="no" data-vrm="yes" data-profit="80" data-price="950" data-pmot="0.7400" data-item="444" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#4</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span class='tag-ulez-fail'>✗ ULEZ fail</span><span class="card-meta">2016 · 95k · TW20</span></div>
+    <a href="https://www.ebay.co.uk/itm/444" target="_blank" class="card-title">2016 Vauxhall Corsa 1.4 SRi 3dr Petrol 95k Miles</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£950</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1600</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£80</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£900</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£400<small style="font-weight:400"> (w/c £800)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>74%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-444'>YX16DEF</code> <small class='dim'>(regex_item_specifics, 95%)</small></div>
+    
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="no" data-vrm="yes" data-profit="-120" data-price="1100" data-pmot="0.6800" data-item="555" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#5</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span class='tag-ulez-fail'>✗ ULEZ fail</span><span class="card-meta">2015 · 110k · TW20</span></div>
+    <a href="https://www.ebay.co.uk/itm/555" target="_blank" class="card-title">2015 VW Polo 1.2 TSI 90 Match Edition 5dr 110k</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1100</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1700</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-120</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£850</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£500<small style="font-weight:400"> (w/c £900)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>68%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-555'>BG15GHI</code> <small class='dim'>(dvla_enquiry, 99%)</small></div>
+    
+  </div>
+</div></div>
+  <div class="section-title">🔔 Near-Miss — Worth Negotiating <span style="color:var(--dim);font-weight:400;font-size:.85em">(listed just above your max bid)</span></div><div class="nearmiss-grid"><div class="card compact" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="210" data-price="1750" data-pmot="0.8600" data-item="666" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2018 · 61k · TW20</span></div>
+    <a href="https://www.ebay.co.uk/itm/666" target="_blank" class="card-title">2018 Skoda Fabia 1.2 TSI 90 SE 5dr Petrol 61k</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1750</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2600</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£210</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1680</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£250<small style="font-weight:400"> (w/c £500)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>86%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-666'>NU18JKL</code> <small class='dim'>(plate_recognizer, 87%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,700</strong></div>
+  </div>
+</div></div>
+  <details><summary class="avoid-toggle">⚠ AVOID — High Risk (1 listings) — click to expand</summary><p style="font-size:.85em;color:#ef4444;margin:8px 0">These triggered fraud flags, extreme shock ratios, or other risk signals. Do not bid without thorough inspection.</p><div class="nearmiss-grid"><div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="no" data-vrm="no" data-profit="-800" data-price="1800" data-pmot="0.4100" data-item="777" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class='tag-ulez-fail'>✗ ULEZ fail</span><span class="card-meta">2014 · 145k · TW20</span></div>
+    <a href="https://www.ebay.co.uk/itm/777" target="_blank" class="card-title">2014 BMW 1 Series 118d M Sport 5dr 145k NO MOT</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1800</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2200</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-800</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£500</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£1200<small style="font-weight:400"> (w/c £2400)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>41%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-777'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"777","777")'><input class='vrm-input' id='vrm-inp-777' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    
+  </div>
+</div></div></details>
+  <div class="footer">
+    Dealerly 0.9.7 — SWAutos &nbsp;|&nbsp;
+    Estimates only. Always verify before bidding.
+  </div>
+  <script>
+/* Dark mode — applied before paint via inline script in <head> */
+function toggleDark() {
+  const cur  = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('dealerly_theme', next);
+  const btn = document.getElementById('dark-btn');
+  if (btn) btn.textContent = next === 'dark' ? '\u2600 Light' : '\u263e Dark';
+}
+
+/* Manual VRM — restore saved values from localStorage on load.
+   Uses data-item querySelectorAll so BOTH the top-3 strip instance and the
+   main grid instance of the same listing are updated together. */
+function _applyVrm(itemId, val) {
+  document.querySelectorAll(`.card[data-item="${itemId}"]`).forEach(card => {
+    const disp = card.querySelector('[id^="vrm-disp-"]');
+    const form = card.querySelector('.vrm-form');
+    if (disp) { disp.textContent = val; disp.className = 'vrm-saved'; }
+    if (form) form.style.display = 'none';
+  });
+}
+
+(function () {
+  const seen = new Set();
+  document.querySelectorAll('.card[data-item]').forEach(card => {
+    const id = card.dataset.item;
+    if (seen.has(id)) return;
+    seen.add(id);
+    const val = localStorage.getItem('vrm_' + id);
+    if (val) _applyVrm(id, val);
+  });
+})();
+
+function saveVrm(ev, itemId, iid) {
+  ev.preventDefault();
+  const inp = document.getElementById('vrm-inp-' + iid);
+  const val = inp.value.trim().toUpperCase().replace(/\s/g, '');
+  if (!val) return;
+  localStorage.setItem('vrm_' + itemId, val);
+  _applyVrm(itemId, val);
+}
+
+/* Filter + sort state */
+const state = {
+  dec: 'ALL', plat: 'ALL', ulez: 'ALL', vrm: 'ALL',
+  profMin: -99999, profMax: 99999, sort: 'profit_desc'
+};
+
+function applyFilters() {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  const cards = Array.from(grid.querySelectorAll('.card'));
+
+  cards.forEach(c => {
+    const show =
+      (state.dec  === 'ALL' || c.dataset.decision === state.dec)  &&
+      (state.plat === 'ALL' || c.dataset.platform === state.plat) &&
+      (state.ulez === 'ALL' || c.dataset.ulez     === state.ulez) &&
+      (state.vrm  === 'ALL' || c.dataset.vrm      === state.vrm)  &&
+      parseFloat(c.dataset.profit) >= state.profMin &&
+      parseFloat(c.dataset.profit) <= state.profMax;
+    c.classList.toggle('hidden', !show);
+  });
+
+  const visible = cards.filter(c => !c.classList.contains('hidden'));
+  visible.sort((a, b) => {
+    switch (state.sort) {
+      case 'profit_desc': return parseFloat(b.dataset.profit) - parseFloat(a.dataset.profit);
+      case 'profit_asc':  return parseFloat(a.dataset.profit) - parseFloat(b.dataset.profit);
+      case 'price_asc':   return parseFloat(a.dataset.price)  - parseFloat(b.dataset.price);
+      case 'price_desc':  return parseFloat(b.dataset.price)  - parseFloat(a.dataset.price);
+      case 'pmot_desc':   return parseFloat(b.dataset.pmot)   - parseFloat(a.dataset.pmot);
+    }
+    return 0;
+  });
+  visible.forEach(c => grid.appendChild(c));
+
+  const cnt = document.getElementById('result-count');
+  if (cnt) cnt.textContent = visible.length + ' listing' + (visible.length !== 1 ? 's' : '');
+}
+
+function setFilter(key, val, el) {
+  state[key] = val;
+  if (el) {
+    const grp = el.closest('.filter-group');
+    if (grp) grp.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+  applyFilters();
+}
+
+function setProfitRange() {
+  const lo = document.getElementById('prof-min');
+  const hi = document.getElementById('prof-max');
+  state.profMin = (lo && lo.value !== '') ? parseFloat(lo.value) : -99999;
+  state.profMax = (hi && hi.value !== '') ? parseFloat(hi.value) :  99999;
+  applyFilters();
+}
+
+function setSort(sel) {
+  state.sort = sel.value;
+  applyFilters();
+}
+</script>
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      applyFilters();
+      const theme = document.documentElement.getAttribute('data-theme');
+      const btn = document.getElementById('dark-btn');
+      if (btn) btn.textContent = theme === 'dark' ? '☀ Light' : '☾ Dark';
+    });
+  </script>
+</body>
+</html>

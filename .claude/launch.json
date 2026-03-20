@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "report-preview",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "7821", "--directory", "D:/RHUL/Dealerly"],
+      "port": 7821
+    }
+  ]
+}

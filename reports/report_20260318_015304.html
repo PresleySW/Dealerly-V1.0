@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dealerly 0.9.7 — 2026-03-18 01:53</title>
+  <style>
+:root {
+  --bg:#f1f5f9; --surface:#fff; --surface2:#f8fafc;
+  --text:#0f172a; --dim:#64748b; --border:#e2e8f0;
+  --hover:#e2e8f0; --link:#1d4ed8;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+}
+[data-theme=dark] {
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d;
+  --text:#e6edf3; --dim:#8b949e; --border:#30363d;
+  --hover:#1f2937; --link:#58a6ff;
+  --shadow:0 1px 3px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+     background:var(--bg);color:var(--text);padding:20px 24px;line-height:1.4}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+code{background:var(--surface2);padding:2px 5px;border-radius:4px;font-size:.88em}
+small{font-size:.8em;color:var(--dim)}
+
+/* header */
+.page-header{display:flex;align-items:center;justify-content:space-between;
+             margin-bottom:6px;flex-wrap:wrap;gap:8px}
+h1{font-size:1.4em}
+.dark-toggle{padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);
+             background:var(--surface);color:var(--text);cursor:pointer;
+             font-size:.85em;font-weight:600;transition:all .12s}
+.dark-toggle:hover{border-color:var(--dim)}
+.meta{color:var(--dim);font-size:.88em;margin-bottom:24px}
+
+/* stat cards */
+.stat-grid{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.stat-card{background:var(--surface);border-radius:10px;padding:14px 18px;
+           box-shadow:var(--shadow);min-width:100px}
+.stat-card .sv{font-size:1.7em;font-weight:700;line-height:1.1}
+.stat-card .sl{font-size:.73em;color:var(--dim);margin-top:3px}
+
+/* section titles */
+.section-title{font-size:1.05em;font-weight:700;margin:28px 0 12px;color:var(--text)}
+
+/* top-3 grid */
+.top3-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+           gap:14px;margin-bottom:4px}
+
+/* filter bar */
+.filter-bar{background:var(--surface);border-radius:10px;padding:12px 16px;
+            box-shadow:var(--shadow);margin-bottom:16px;
+            display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.filter-group{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.filter-label{font-size:.75em;font-weight:700;color:var(--dim);
+              text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.fbtn{padding:5px 12px;border-radius:7px;border:1.5px solid var(--border);
+      background:var(--surface2);color:var(--text);cursor:pointer;
+      font-size:.82em;font-weight:600;transition:all .12s}
+.fbtn:hover{border-color:var(--dim)}
+.fbtn.active{color:#fff;border-color:transparent}
+.fbtn[data-v=BUY].active{background:#22c55e}
+.fbtn[data-v=OFFER].active{background:#f59e0b}
+.fbtn[data-v=PASS].active{background:#94a3b8}
+.profit-range{display:flex;align-items:center;gap:4px}
+.profit-range input{width:70px;padding:4px 6px;border-radius:6px;
+                    border:1.5px solid var(--border);background:var(--surface2);
+                    color:var(--text);font-size:.82em}
+.sort-sel{padding:5px 10px;border-radius:7px;border:1.5px solid var(--border);
+          background:var(--surface2);color:var(--text);font-size:.82em;cursor:pointer}
+
+/* cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.card{background:var(--surface);border-radius:10px;box-shadow:var(--shadow);
+      display:flex;overflow:hidden;transition:box-shadow .15s}
+.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.13)}
+.card.hidden{display:none!important}
+
+/* thumbnail */
+.thumb-wrap{flex-shrink:0;width:120px;background:var(--surface2);
+            display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb{width:120px;height:90px;object-fit:cover;display:block}
+.thumb-empty{width:120px;height:90px;display:flex;align-items:center;
+             justify-content:center;font-size:1.8em;color:var(--dim)}
+.compact .thumb-wrap{width:80px}
+.compact .thumb,.compact .thumb-empty{width:80px;height:60px}
+
+/* card body */
+.card-body{flex:1;padding:12px 14px;min-width:0}
+.card-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.rank{font-size:.75em;font-weight:700;color:var(--dim)}
+.card-meta{font-size:.74em;color:var(--dim);margin-left:auto}
+.card-title{display:block;font-weight:600;font-size:.9em;margin-bottom:8px;
+            color:var(--link);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* numbers row */
+.num-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:7px}
+.num{display:flex;flex-direction:column}
+.nv{font-size:.9em;font-weight:700}
+.nl{font-size:.68em;color:var(--dim);margin-top:1px}
+.profit-good{color:#22c55e}
+.profit-mid{color:#f59e0b}
+.profit-bad{color:#ef4444}
+
+/* tags */
+.tag-ulez-ok{font-size:.75em;color:#22c55e;font-weight:600}
+.tag-ulez-fail{font-size:.75em;color:#ef4444;font-weight:600}
+.warn{color:#f59e0b;font-weight:600}
+.dim{color:var(--dim)}
+
+/* vrm */
+.vrm-row{font-size:.82em;margin-bottom:5px;display:flex;align-items:center;
+         flex-wrap:wrap;gap:4px}
+.vrm-form{display:inline-flex;gap:4px;align-items:center}
+.vrm-input{padding:3px 6px;border-radius:5px;border:1.5px solid var(--border);
+           background:var(--surface2);color:var(--text);font-size:.9em;width:88px}
+.vrm-btn{padding:3px 8px;border-radius:5px;border:1.5px solid var(--border);
+         background:var(--surface);color:var(--text);cursor:pointer;font-size:.8em}
+.vrm-saved{font-weight:700;color:#22c55e}
+
+/* hints */
+.offer-hint{font-size:.82em;font-weight:600;color:#f59e0b;margin-bottom:4px}
+.offer-hint.ok{color:#22c55e}
+.repair-note{font-size:.76em;color:#92400e;margin-bottom:4px;padding:3px 7px;
+             background:#fef3c7;border-radius:4px}
+[data-theme=dark] .repair-note{background:#2d1f00;color:#fbbf24}
+
+/* expandables */
+.expandable{margin-top:6px}
+.expandable summary{cursor:pointer;font-size:.8em;color:var(--link);
+                    user-select:none;list-style:none;display:inline-flex;
+                    align-items:center;gap:4px}
+.expandable summary::-webkit-details-marker{display:none}
+.expandable summary::before{content:'b6';font-size:.65em;
+                             display:inline-block;transition:transform .15s}
+.expandable[open] summary::before{transform:rotate(90deg)}
+.expand-body{margin-top:6px;font-size:.82em;line-height:1.5;
+             background:var(--surface2);border-radius:6px;
+             padding:8px 10px;border:1px solid var(--border)}
+.copy-btn{margin-top:5px;padding:3px 10px;border-radius:5px;
+          border:1px solid var(--border);background:var(--surface);
+          color:var(--text);cursor:pointer;font-size:.78em}
+
+/* near-miss grid */
+.nearmiss-grid{display:grid;
+               grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+               gap:10px;margin-top:8px}
+
+/* avoid toggle */
+.avoid-toggle{cursor:pointer;color:#ef4444;font-weight:700;font-size:1em;
+              user-select:none;padding:8px 0;margin-top:28px;display:block}
+
+/* footer */
+.footer{margin-top:36px;color:var(--dim);font-size:.78em;
+        border-top:1px solid var(--border);padding-top:12px}
+</style>
+  <script>
+    /* Apply saved/preferred theme before first paint (avoids flash) */
+    (function(){
+      const s = localStorage.getItem('dealerly_theme');
+      const p = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', s || p);
+    })();
+  </script>
+</head>
+<body>
+  <div class="page-header">
+    <h1>🚗 Dealerly 0.9.7 — SWAutos Flip Report</h1>
+    <button class="dark-toggle" id="dark-btn" onclick="toggleDark()">☾ Dark</button>
+  </div>
+  <p class="meta">
+    2026-03-18 01:53 &nbsp;|&nbsp; Capital: £3000
+    &nbsp;|&nbsp; Band: £800–£2500
+    &nbsp;|&nbsp; eBay (production) | auction=False
+    &nbsp;|&nbsp; Sources: ebay <span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:8px;font-size:.78em">AutoTrader</span>
+  </p>
+  <div class="stat-grid"><div class="stat-card"><div class="sv" style="color:#22c55e">7</div><div class="sl">BUY</div></div><div class="stat-card"><div class="sv" style="color:#f59e0b">2</div><div class="sl">OFFER</div></div><div class="stat-card"><div class="sv" style="color:#94a3b8">26</div><div class="sl">PASS</div></div><div class="stat-card"><div class="sv" style="color:#ef4444">55</div><div class="sl">AVOID</div></div><div class="stat-card"><div class="sv">90</div><div class="sl">Scored</div></div><div class="stat-card"><div class="sv" style="color:#0369a1">4/15 top · 16/33 all</div><div class="sl">VRMs found</div></div><div class="stat-card"><div class="sv" style="color:#0369a1">2/15 top · 14/33 all</div><div class="sl">DVSA verified</div></div></div>
+  <div class="section-title">⚡ Top 3 — Act Now</div><div class="top3-grid"><div class="card featured" data-decision="BUY" data-platform="ebay" data-ulez="no" data-vrm="no" data-profit="869" data-price="1300" data-pmot="0.7900" data-item="v1|389747306796|0" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class='tag-ulez-fail'>✗ ULEZ fail</span><span class="card-meta">2005 · ? · BR7***</span></div>
+    <a href="https://www.ebay.co.uk/itm/389747306796?_skw=honda+civic&amp;hash=item5abebff12c:g:miMAAeSwOJBprYIF" target="_blank" class="card-title">2005 Honda Civic 1.6 Petrol</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1300</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2716</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£869</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1779</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>79%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|389747306796|0f'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|389747306796|0","v1|389747306796|0f")'><input class='vrm-input' id='vrm-inp-v1|389747306796|0f' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form> <small class='warn'>⚠ MOT unverified</small></div>
+    <div class='offer-hint ok'>✓ Max bid exceeds asking — buy at £1300</div><div class='repair-note'>⚠ i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div><details class='expandable'><summary>✉ AI offer message</summary><div class='expand-body' id='msg_v1|3897473'>Hi, I&#x27;d like to offer £1800 for the Honda Civic. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3897473').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button></details>
+  </div>
+</div>
+<div class="card featured" data-decision="BUY" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="864" data-price="1299" data-pmot="0.8200" data-item="v1|257406986784|0" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#2</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class="card-meta">2011 · ? · CR4***</span></div>
+    <a href="https://www.ebay.co.uk/itm/257406986784?_skw=skoda+octavia&amp;hash=item3beea6ea20:g:X8oAAeSwoONpqAYS" target="_blank" class="card-title">Scoda Octavia 1.6 Mpi 2011 ULEZ COMPLIANT</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1299</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2764</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£864</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1773</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£220<small style="font-weight:400"> (w/c £900)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>82%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|257406986784|0f'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|257406986784|0","v1|257406986784|0f")'><input class='vrm-input' id='vrm-inp-v1|257406986784|0f' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form> <small class='warn'>⚠ MOT unverified</small></div>
+    <div class='offer-hint ok'>✓ Max bid exceeds asking — buy at £1299</div><div class='repair-note'>⚠ TDI: DSG/DQ200 issues, DPF. vRS: clutch £800. Timing belt.</div><details class='expandable'><summary>✉ AI offer message</summary><div class='expand-body' id='msg_v1|2574069'>Hi, I&#x27;d like to offer £1750 for the Skoda Octavia. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|2574069').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button></details>
+  </div>
+</div>
+<div class="card featured" data-decision="BUY" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="564" data-price="1500" data-pmot="0.8300" data-item="v1|377031840095|0" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/blUAAeSw5GFptCmO/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/blUAAeSw5GFptCmO/s-l1600.jpg" alt="Ford Fiesta 2012 1.2 Edge" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#3</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class="card-meta">2012 · 64k · ST7***</span></div>
+    <a href="https://www.ebay.co.uk/itm/377031840095?_skw=ford+fiesta&amp;hash=item57c8d9515f:g:blUAAeSw5GFptCmO" target="_blank" class="card-title">Ford Fiesta 2012 1.2 Edge</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1500</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2581</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£564</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1674</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £650)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>83%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|377031840095|0f'>ISDH10K</code> <small class='dim'>(regex_description, 97%)</small></div>
+    <div class='offer-hint ok'>✓ Max bid exceeds asking — buy at £1500</div><div class='repair-note'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details class='expandable'><summary>✉ AI offer message</summary><div class='expand-body' id='msg_v1|3770318'>Hi, I&#x27;d like to offer £1650 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3770318').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button></details>
+  </div>
+</div></div>
+  <div class="section-title">All Listings <span style="color:var(--dim);font-weight:400;font-size:.85em">(15)</span></div><div class="filter-bar"><div class="filter-group"><span class="filter-label">Decision</span><button class="fbtn active" data-v="ALL" onclick="setFilter('dec','ALL',this)">All</button><button class="fbtn" data-v="BUY"   onclick="setFilter('dec','BUY',this)">BUY</button><button class="fbtn" data-v="OFFER" onclick="setFilter('dec','OFFER',this)">OFFER</button><button class="fbtn" data-v="PASS"  onclick="setFilter('dec','PASS',this)">PASS</button></div><div class="filter-group"><span class="filter-label">ULEZ</span><button class="fbtn active" data-v="ALL" onclick="setFilter('ulez','ALL',this)">All</button><button class="fbtn" data-v="yes" onclick="setFilter('ulez','yes',this)">✓ ULEZ</button><button class="fbtn" data-v="no"  onclick="setFilter('ulez','no',this)">Fail</button></div><div class="filter-group"><span class="filter-label">VRM</span><button class="fbtn active" data-v="ALL" onclick="setFilter('vrm','ALL',this)">All</button><button class="fbtn" data-v="yes" onclick="setFilter('vrm','yes',this)">Found</button><button class="fbtn" data-v="no"  onclick="setFilter('vrm','no',this)">Missing</button></div><div class="filter-group"><span class="filter-label">Profit £</span><div class="profit-range"><input type="number" id="prof-min" placeholder="min" oninput="setProfitRange()"><span style="color:var(--dim)">–</span><input type="number" id="prof-max" placeholder="max" oninput="setProfitRange()"></div></div><div class="filter-group"><span class="filter-label">Sort</span><select class="sort-sel" onchange="setSort(this)"><option value="profit_desc">Profit ↓</option><option value="profit_asc">Profit ↑</option><option value="price_asc">Price ↑</option><option value="price_desc">Price ↓</option><option value="pmot_desc">p_MOT ↓</option></select></div><span id="result-count" style="font-size:.8em;color:var(--dim);margin-left:auto"></span></div><div class="card-grid" id="main-grid"><div class="card" data-decision="BUY" data-platform="ebay" data-ulez="no" data-vrm="no" data-profit="869" data-price="1300" data-pmot="0.7900" data-item="v1|389747306796|0" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class='tag-ulez-fail'>✗ ULEZ fail</span><span class="card-meta">2005 · ? · BR7***</span></div>
+    <a href="https://www.ebay.co.uk/itm/389747306796?_skw=honda+civic&amp;hash=item5abebff12c:g:miMAAeSwOJBprYIF" target="_blank" class="card-title">2005 Honda Civic 1.6 Petrol</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1300</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2716</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£869</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1779</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>79%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|389747306796|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|389747306796|0","v1|389747306796|0")'><input class='vrm-input' id='vrm-inp-v1|389747306796|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form> <small class='warn'>⚠ MOT unverified</small></div>
+    <div class='offer-hint ok'>✓ Max bid exceeds asking — buy at £1300</div><div class='repair-note'>⚠ i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div><details class='expandable'><summary>✉ AI offer message</summary><div class='expand-body' id='msg_v1|3897473'>Hi, I&#x27;d like to offer £1800 for the Honda Civic. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3897473').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button></details>
+  </div>
+</div>
+<div class="card" data-decision="BUY" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="864" data-price="1299" data-pmot="0.8200" data-item="v1|257406986784|0" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#2</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class="card-meta">2011 · ? · CR4***</span></div>
+    <a href="https://www.ebay.co.uk/itm/257406986784?_skw=skoda+octavia&amp;hash=item3beea6ea20:g:X8oAAeSwoONpqAYS" target="_blank" class="card-title">Scoda Octavia 1.6 Mpi 2011 ULEZ COMPLIANT</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1299</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2764</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£864</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1773</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£220<small style="font-weight:400"> (w/c £900)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>82%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|257406986784|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|257406986784|0","v1|257406986784|0")'><input class='vrm-input' id='vrm-inp-v1|257406986784|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form> <small class='warn'>⚠ MOT unverified</small></div>
+    <div class='offer-hint ok'>✓ Max bid exceeds asking — buy at £1299</div><div class='repair-note'>⚠ TDI: DSG/DQ200 issues, DPF. vRS: clutch £800. Timing belt.</div><details class='expandable'><summary>✉ AI offer message</summary><div class='expand-body' id='msg_v1|2574069'>Hi, I&#x27;d like to offer £1750 for the Skoda Octavia. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|2574069').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button></details>
+  </div>
+</div>
+<div class="card" data-decision="BUY" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="564" data-price="1500" data-pmot="0.8300" data-item="v1|377031840095|0" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/blUAAeSw5GFptCmO/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/blUAAeSw5GFptCmO/s-l1600.jpg" alt="Ford Fiesta 2012 1.2 Edge" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#3</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class="card-meta">2012 · 64k · ST7***</span></div>
+    <a href="https://www.ebay.co.uk/itm/377031840095?_skw=ford+fiesta&amp;hash=item57c8d9515f:g:blUAAeSw5GFptCmO" target="_blank" class="card-title">Ford Fiesta 2012 1.2 Edge</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1500</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2581</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£564</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1674</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £650)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>83%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|377031840095|0'>ISDH10K</code> <small class='dim'>(regex_description, 97%)</small></div>
+    <div class='offer-hint ok'>✓ Max bid exceeds asking — buy at £1500</div><div class='repair-note'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details class='expandable'><summary>✉ AI offer message</summary><div class='expand-body' id='msg_v1|3770318'>Hi, I&#x27;d like to offer £1650 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3770318').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button></details>
+  </div>
+</div>
+<div class="card" data-decision="BUY" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="515" data-price="1495" data-pmot="1.0000" data-item="v1|366273945051|0" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/N-cAAeSwx-RptYLt/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/N-cAAeSwx-RptYLt/s-l1600.jpg" alt="Ford Fiesta 2010 Zetec 1.25" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#4</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class="card-meta">2010 · ? · B62***</span></div>
+    <a href="https://www.ebay.co.uk/itm/366273945051?_skw=ford+fiesta&amp;hash=item5547a0dddb:g:N-cAAeSwx-RptYLt" target="_blank" class="card-title">Ford Fiesta 2010 Zetec 1.25</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1495</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2522</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£515</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1620</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £650)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#22c55e;font-weight:700'>100%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|366273945051|0'>BL74EZX</code> <small class='dim'>(plate_recognizer+dvla_validated, 82%)</small></div>
+    <div class='offer-hint ok'>✓ Max bid exceeds asking — buy at £1495</div><div class='repair-note'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details class='expandable'><summary>✉ AI offer message</summary><div class='expand-body' id='msg_v1|3662739'>Hi, I&#x27;d like to offer £1600 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3662739').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button></details>
+  </div>
+</div>
+<div class="card" data-decision="BUY" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="507" data-price="2495" data-pmot="0.9000" data-item="v1|306828018486|0" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/poEAAeSwGmhpubfy/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/poEAAeSwGmhpubfy/s-l1600.jpg" alt="Ford Fiesta 1.0 Full Mot Ideal First Car for Sale 2016 Drive" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#5</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2016 · 75k · BD1***</span></div>
+    <a href="https://www.ebay.co.uk/itm/306828018486?_skw=ford+fiesta&amp;hash=item4770600336:g:poEAAeSwGmhpubfy" target="_blank" class="card-title">Ford Fiesta 1.0 Full Mot Ideal First Car for Sale 2016 Drives Good Just Clean</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2495</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£3469</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£507</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£2612</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£30<small style="font-weight:400"> (w/c £620)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#22c55e;font-weight:700'>90%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|306828018486|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|306828018486|0","v1|306828018486|0")'><input class='vrm-input' id='vrm-inp-v1|306828018486|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form> <small class='warn'>⚠ MOT unverified</small></div>
+    <div class='offer-hint ok'>✓ Max bid exceeds asking — buy at £2495</div><div class='repair-note'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details class='expandable'><summary>✉ AI offer message</summary><div class='expand-body' id='msg_v1|3068280'>Hi, I&#x27;d like to offer £2600 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3068280').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button></details>
+  </div>
+</div>
+<div class="card" data-decision="BUY" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="463" data-price="2395" data-pmot="0.8600" data-item="v1|127752224310|0" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/a10AAeSwI0FptVV1/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/a10AAeSwI0FptVV1/s-l1600.jpg" alt="Ford Fiesta Eco boost 2017 Black 3 Door" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#6</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2017 · ? · RM9***</span></div>
+    <a href="https://www.ebay.co.uk/itm/127752224310?_skw=ford+fiesta&amp;hash=item1dbea03e36:g:a10AAeSwI0FptVV1" target="_blank" class="card-title">Ford Fiesta Eco boost 2017 Black 3 Door</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2395</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£3444</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£463</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£2468</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £650)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>86%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|127752224310|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|127752224310|0","v1|127752224310|0")'><input class='vrm-input' id='vrm-inp-v1|127752224310|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form> <small class='warn'>⚠ MOT unverified</small></div>
+    <div class='offer-hint ok'>✓ Max bid exceeds asking — buy at £2395</div><div class='repair-note'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div><details class='expandable'><summary>✉ AI offer message</summary><div class='expand-body' id='msg_v1|1277522'>Hi, I&#x27;d like to offer £2450 for the Ford Fiesta. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|1277522').innerText);this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button></details>
+  </div>
+</div>
+<div class="card" data-decision="BUY" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="242" data-price="1600" data-pmot="0.8200" data-item="v1|287189219249|0" style="border-left:4px solid #22c55e">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/d2AAAeSwJPJprdjU/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/d2AAAeSwJPJprdjU/s-l1600.jpg" alt="Toyota Yaris T2 VVT-1" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#7</span> <span style="background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">BUY</span> <span class="card-meta">2008 · 72k · DL4***</span></div>
+    <a href="https://www.ebay.co.uk/itm/287189219249?_skw=toyota+yaris&amp;hash=item42ddcfb7b1:g:d2AAAeSwJPJprdjU" target="_blank" class="card-title">Toyota Yaris T2 VVT-1</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1600</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2307</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£242</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1452</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£120<small style="font-weight:400"> (w/c £450)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>82%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|287189219249|0'>T2VVT</code> <small class='dim'>(regex_item_specifics, 95%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,450</strong></div><div class='repair-note'>⚠ Extremely reliable. D-4D diesel: EGR but rare. Hybrid: battery age.</div>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="144" data-price="2145" data-pmot="1.0000" data-item="v1|227258829280|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/K4UAAeSw7WVppXWt/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/K4UAAeSw7WVppXWt/s-l1600.jpg" alt="Toyota Auris 2008" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#8</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class="card-meta">2008 · 79k · B32***</span></div>
+    <a href="https://www.ebay.co.uk/itm/227258829280?_skw=toyota+auris&amp;hash=item34e9ae89e0:g:K4UAAeSw7WVppXWt" target="_blank" class="card-title">Toyota Auris 2008</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2145</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2793</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£144</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1899</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£120<small style="font-weight:400"> (w/c £550)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#22c55e;font-weight:700'>100%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|227258829280|0'>T3VVT</code> <small class='dim'>(regex_item_specifics, 95%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,900</strong></div><div class='repair-note'>⚠ Hybrid: check battery condition. 1.6 petrol very reliable.</div><details class='expandable'><summary>🔍 MOT history (5 tests)</summary><div class='expand-body'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Fiat Auto Trail &nbsp;|&nbsp; Grey &nbsp;|&nbsp; Diesel &nbsp;|&nbsp; First used: 2019-05-08</div><table style='width:100%;font-size:0.82em;border-collapse:collapse'><thead><tr style='background:#1e3a5f;color:#fff'><th style='padding:4px 6px;text-align:left'>Date</th><th style='padding:4px 6px'>Result</th><th style='padding:4px 6px;text-align:right'>Mileage</th><th style='padding:4px 6px;text-align:left'>Notes</th></tr></thead><tbody><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2025-04-26</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>13,635 MI</td><td style='padding:4px 6px'></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2024-05-07</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>10,907 MI</td><td style='padding:4px 6px'></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2023-05-02</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>10,068 MI</td><td style='padding:4px 6px'></td></tr><tr style='background:#dcfce7'><td style='padding:4px 6px;white-space:nowrap'>🟢 2022-05-03</td><td style='padding:4px 6px;font-weight:600'>PASSED</td><td style='padding:4px 6px;text-align:right'>8,023 MI</td><td style='padding:4px 6px'></td></tr><tr style='background:#fee2e2'><td style='padding:4px 6px;white-space:nowrap'>🔴 2022-05-03</td><td style='padding:4px 6px;font-weight:600'>FAILED</td><td style='padding:4px 6px;text-align:right'>8,023 MI</td><td style='padding:4px 6px'><ul style='margin:2px 0 2px 16px;padding:0;font-size:0.78em'><li style='color:#991b1b'>Offside Outline marker lamp not working centre lamp (4.2.1 (a) (ii))</li></ul></td></tr></tbody></table></div></details>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="4" data-price="1450" data-pmot="0.8300" data-item="v1|147209241618|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#9</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class="card-meta">2014 · ? · BD21***</span></div>
+    <a href="https://www.ebay.co.uk/itm/147209241618?_skw=hyundai+i20&amp;hash=item22465ac412:g:PU8AAeSwbodpuKnU" target="_blank" class="card-title">+++2014 14 HYUNDAI i20 1.2 ACTIVE 3 DOOR HATCHBACK+++</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1450</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1885</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£4</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1064</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£120<small style="font-weight:400"> (w/c £500)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>83%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|147209241618|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|147209241618|0","v1|147209241618|0")'><input class='vrm-input' id='vrm-inp-v1|147209241618|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,050</strong></div><div class='repair-note'>⚠ Very reliable. Check for previous accident damage.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-12" data-price="1625" data-pmot="0.8300" data-item="v1|377023454147|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#10</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2011 · ? · W2***</span></div>
+    <a href="https://www.ebay.co.uk/itm/377023454147?_skw=honda+civic&amp;hash=item57c8595bc3:g:c0MAAeSwk1ppsELR" target="_blank" class="card-title">Honda Civic Type S 2011 1.4 Petrol Mk8 Manual Car ULEZ</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1625</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2112</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-12</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1224</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>83%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|377023454147|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|377023454147|0","v1|377023454147|0")'><input class='vrm-input' id='vrm-inp-v1|377023454147|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="no" data-vrm="no" data-profit="-14" data-price="1000" data-pmot="0.8300" data-item="v1|397697844248|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#11</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span class='tag-ulez-fail'>✗ ULEZ fail</span><span class="card-meta">2010 · ? · EX20***</span></div>
+    <a href="https://www.ebay.co.uk/itm/397697844248?_skw=skoda+fabia&amp;hash=item5c98a38418:g:7i0AAeSwXfNpdPME" target="_blank" class="card-title">Skoda Fabia - 2010 - Estate 1.4 - 5 Door Diesel - manual- long MOT</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1000</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1300</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-14</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£596</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£50<small style="font-weight:400"> (w/c £660)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>83%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|397697844248|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|397697844248|0","v1|397697844248|0")'><input class='vrm-input' id='vrm-inp-v1|397697844248|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ 1.9 TDI PD: injector seals £300–600. Timing belt every 60k.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-25" data-price="2200" data-pmot="0.8000" data-item="v1|389746671174|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#12</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2013 · 112k · M9***</span></div>
+    <a href="https://www.ebay.co.uk/itm/389746671174?_skw=seat+ibiza&amp;hash=item5abeb63e46:g:o~0AAeSwcrlptWhN" target="_blank" class="card-title">2013 SEAT Ibiza – 1.4 Petrol Manual 112k miles, good condition.</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2200</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2723</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-25</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1785</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £650)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|389746671174|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|389746671174|0","v1|389746671174|0")'><input class='vrm-input' id='vrm-inp-v1|389746671174|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ 1.2 TSI: timing chain. FR: front splitter. 1.4 TDI: timing belt.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-23" data-price="1360" data-pmot="0.8500" data-item="v1|358338778577|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#13</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2009 · ? · S71***</span></div>
+    <a href="https://www.ebay.co.uk/itm/358338778577?_skw=seat+ibiza&amp;hash=item536ea7d5d1:g:PqkAAeSwy85puEUs" target="_blank" class="card-title">Seat Ibiza 1.4 petrol 2009 sport ...12 months mot</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1360</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1768</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-23</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£947</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£130<small style="font-weight:400"> (w/c £640)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>85%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|358338778577|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|358338778577|0","v1|358338778577|0")'><input class='vrm-input' id='vrm-inp-v1|358338778577|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ 1.2 TSI: timing chain. FR: front splitter. 1.4 TDI: timing belt.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="-26" data-price="1050" data-pmot="0.8900" data-item="v1|177969118514|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#14</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span class="card-meta">? · ? · L4***</span></div>
+    <a href="https://www.ebay.co.uk/itm/177969118514?_skw=vauxhall+corsa&amp;hash=item296fc93d32:g:okgAAeSw3FNpuXXl" target="_blank" class="card-title">Vauxhall Corsa Petrol</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1050</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1455</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-26</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£634</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£155<small style="font-weight:400"> (w/c £630)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>89%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|177969118514|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|177969118514|0","v1|177969118514|0")'><input class='vrm-input' id='vrm-inp-v1|177969118514|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ Petrol: generally reliable. Check timing chain on 1.0/1.2 models.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-37" data-price="1495" data-pmot="0.8300" data-item="v1|277800223836|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#15</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2012 · ? · TN6***</span></div>
+    <a href="https://www.ebay.co.uk/itm/277800223836?_skw=honda+civic&amp;hash=item40ae2f045c:g:PMQAAeSwXVxptYX2" target="_blank" class="card-title">2012 12 Honda Civic 1.8 petrol manual 5 door</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1495</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1944</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-37</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1068</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>83%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|277800223836|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|277800223836|0","v1|277800223836|0")'><input class='vrm-input' id='vrm-inp-v1|277800223836|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div>
+  </div>
+</div></div>
+  <div class="section-title">🔔 Near-Miss — Worth Negotiating <span style="color:var(--dim);font-weight:400;font-size:.85em">(listed just above your max bid)</span></div><div class="nearmiss-grid"><div class="card compact" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="223" data-price="1400" data-pmot="0.8000" data-item="v1|389757408555|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/a9QAAeSwnc1puCTD/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/a9QAAeSwnc1puCTD/s-l1600.jpg" alt="Ford Fiesta 1.0T EcoBoost Zetec Hatchback 3dr Petrol Manual " class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2013 · 109k · RG42***</span></div>
+    <a href="https://www.ebay.co.uk/itm/389757408555?_skw=ford+fiesta&amp;hash=item5abf5a152b:g:a9QAAeSwnc1puCTD" target="_blank" class="card-title">Ford Fiesta 1.0T EcoBoost Zetec Hatchback 3dr Petrol Manual Euro 5 2013 RED</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1400</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2155</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£223</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1233</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£200<small style="font-weight:400"> (w/c £950)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|389757408555|0'>RV63FYS</code> <small class='dim'>(plate_recognizer, 94%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,250</strong></div><div class='repair-note'>⚠ 1.0 EcoBoost: coolant-to-cylinder head issue £600–1200. Check for mayo/overheating.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="196" data-price="1395" data-pmot="0.8000" data-item="v1|287208353084|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/XNMAAeSwrtFpt656/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/XNMAAeSwrtFpt656/s-l1600.jpg" alt="2013 Vauxhall Corsa" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#2</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class="card-meta">2013 · 113k · B13***</span></div>
+    <a href="https://www.ebay.co.uk/itm/287208353084?_skw=vauxhall+corsa&amp;hash=item42def3ad3c:g:XNMAAeSwrtFpt656" target="_blank" class="card-title">2013 Vauxhall Corsa</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1395</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2072</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£196</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1201</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£155<small style="font-weight:400"> (w/c £630)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|287208353084|0'>LB62HFO</code> <small class='dim'>(plate_recognizer, 93%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,200</strong></div><div class='repair-note'>⚠ Petrol: generally reliable. Check timing chain on 1.0/1.2 models.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="191" data-price="1000" data-pmot="0.8000" data-item="v1|267604555960|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/dO4AAeSwQvpptD2b/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/dO4AAeSwQvpptD2b/s-l1600.jpg" alt="1.0 Vauxhall corsa" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#3</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class="card-meta">2011 · 85k · DN36***</span></div>
+    <a href="https://www.ebay.co.uk/itm/267604555960?_skw=vauxhall+corsa&amp;hash=item3e4e7978b8:g:dO4AAeSwQvpptD2b" target="_blank" class="card-title">1.0 Vauxhall corsa</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1000</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1637</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£191</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£801</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£155<small style="font-weight:400"> (w/c £630)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|267604555960|0'>YR61XKA</code> <small class='dim'>(plate_recognizer, 95%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£800</strong></div><div class='repair-note'>⚠ Petrol: generally reliable. Check timing chain on 1.0/1.2 models.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="163" data-price="1499" data-pmot="0.8000" data-item="v1|406772691188|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/NMoAAeSw16NprCwN/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/NMoAAeSw16NprCwN/s-l1600.jpg" alt="Ford Fiesta 2014 Titanium Black 1.0 EcoBoost petrol /Manual " class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#4</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2014 · 96k · NG7***</span></div>
+    <a href="https://www.ebay.co.uk/itm/406772691188?_skw=ford+fiesta&amp;hash=item5eb58ab0f4:g:NMoAAeSw16NprCwN" target="_blank" class="card-title">Ford Fiesta 2014 Titanium Black 1.0 EcoBoost petrol /Manual 96400 miles</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1499</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2197</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£163</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1272</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£200<small style="font-weight:400"> (w/c £950)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|406772691188|0'>YR14YLU</code> <small class='dim'>(plate_recognizer, 93%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,250</strong></div><div class='repair-note'>⚠ 1.0 EcoBoost: coolant-to-cylinder head issue £600–1200. Check for mayo/overheating.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="158" data-price="825" data-pmot="0.7600" data-item="v1|267608207058|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/sDkAAeSwchFptr5W/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/sDkAAeSwchFptr5W/s-l1600.jpg" alt="Honda Jazz 1.2 SE. Silver Metallic. Ulez Compliant. Well Mai" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#5</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class="card-meta">2006 · 128k · BS31***</span></div>
+    <a href="https://www.ebay.co.uk/itm/267608207058?_skw=honda+jazz&amp;hash=item3e4eb12ed2:g:sDkAAeSwchFptr5W" target="_blank" class="card-title">Honda Jazz 1.2 SE. Silver Metallic. Ulez Compliant. Well Maintained.</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£825</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1373</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£158</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£593</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£120<small style="font-weight:400"> (w/c £600)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>76%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|267608207058|0'>NL06UEM</code> <small class='dim'>(plate_recognizer, 95%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£600</strong></div><div class='repair-note'>⚠ CVT gearbox slip: £800–1500. Rust sills/rear arches. Generally very reliable.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="145" data-price="1800" data-pmot="0.8000" data-item="v1|277795821358|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/m5UAAeSwmrdprBRC/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/m5UAAeSwmrdprBRC/s-l1600.jpg" alt="2015 Ford Fiesta" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#6</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2015 · 111k · SY11***</span></div>
+    <a href="https://www.ebay.co.uk/itm/277795821358?_skw=ford+fiesta&amp;hash=item40adebd72e:g:m5UAAeSwmrdprBRC" target="_blank" class="card-title">2015 Ford Fiesta</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1800</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2451</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£145</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1555</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £650)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|277795821358|0'>CV65WLN</code> <small class='dim'>(plate_recognizer, 75%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,550</strong></div><div class='repair-note'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="132" data-price="2100" data-pmot="0.8800" data-item="v1|137131425293|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/7dAAAeSwePBptXrd/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/7dAAAeSwePBptXrd/s-l1600.jpg" alt="Fiesta Zetec 1245.   Low Mileage" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#7</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class="card-meta">? · ? · PE15***</span></div>
+    <a href="https://www.ebay.co.uk/itm/137131425293?_skw=ford+fiesta&amp;hash=item1fedab7e0d:g:7dAAAeSwePBptXrd" target="_blank" class="card-title">Fiesta Zetec 1245.   Low Mileage</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2100</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2730</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£132</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1842</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£120<small style="font-weight:400"> (w/c £350)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>88%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|137131425293|0'>EX60YWE</code> <small class='dim'>(plate_recognizer, 97%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,850</strong></div>
+  </div>
+</div>
+<div class="card compact" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="126" data-price="1495" data-pmot="0.8000" data-item="v1|377036143709|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/slEAAeSwMcVptngW/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/slEAAeSwMcVptngW/s-l1600.jpg" alt="2013 Vauxhall Corsa limited edition" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#8</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span class="card-meta">2013 · 103k · B32***</span></div>
+    <a href="https://www.ebay.co.uk/itm/377036143709?_skw=vauxhall+corsa&amp;hash=item57c91afc5d:g:slEAAeSwMcVptngW" target="_blank" class="card-title">2013 Vauxhall Corsa limited edition</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1495</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2105</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£126</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1231</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£155<small style="font-weight:400"> (w/c £630)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|377036143709|0'>SO13BNX</code> <small class='dim'>(plate_recognizer, 93%)</small></div>
+    <div class='offer-hint'>→ Offer around: <strong>£1,250</strong></div><div class='repair-note'>⚠ Petrol: generally reliable. Check timing chain on 1.0/1.2 models.</div>
+  </div>
+</div></div>
+  <details><summary class="avoid-toggle">⚠ AVOID — High Risk (10 listings) — click to expand</summary><p style="font-size:.85em;color:#ef4444;margin:8px 0">These triggered fraud flags, extreme shock ratios, or other risk signals. Do not bid without thorough inspection.</p><div class="nearmiss-grid"><div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="no" data-vrm="no" data-profit="2172" data-price="1400" data-pmot="0.8300" data-item="v1|406765982366|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class='tag-ulez-fail'>✗ ULEZ fail</span><span class="card-meta">2013 · ? · WR5***</span></div>
+    <a href="https://www.ebay.co.uk/itm/406765982366?_skw=ford+fiesta&amp;hash=item5eb524529e:g:EicAAeSwH4JptTDP" target="_blank" class="card-title">Ford Fiesta 2013 Diesel</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1400</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£4220</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£2172</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£3182</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £650)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>83%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|406765982366|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|406765982366|0","v1|406765982366|0")'><input class='vrm-input' id='vrm-inp-v1|406765982366|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="1008" data-price="1700" data-pmot="1.0000" data-item="v1|127741453281|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/2gAAAeSwtElpdy48/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/2gAAAeSwtElpdy48/s-l1600.jpg" alt="vauxhall corsa griffin 2019" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#2</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class="card-meta">2019 · 92k · NE28***</span></div>
+    <a href="https://www.ebay.co.uk/itm/127741453281?_skw=vauxhall+corsa&amp;hash=item1dbdfbe3e1:g:2gAAAeSwtElpdy48" target="_blank" class="card-title">vauxhall corsa griffin 2019</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1700</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£3286</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£1008</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£2318</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£155<small style="font-weight:400"> (w/c £630)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#22c55e;font-weight:700'>100%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|127741453281|0'>HAS2X</code> <small class='dim'>(regex_description, 75%)</small></div>
+    <div class='repair-note'>⚠ Petrol: generally reliable. Check timing chain on 1.0/1.2 models.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="910" data-price="1100" data-pmot="0.8300" data-item="v1|287212208337|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#3</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class="card-meta">2011 · ? · SK7***</span></div>
+    <a href="https://www.ebay.co.uk/itm/287212208337?_skw=ford+fiesta&amp;hash=item42df2e80d1:g:PKIAAeSwJwZpuYb-" target="_blank" class="card-title">2011 Ford Fiesta Zetec Manual 1.25L, 5 Door</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1100</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2522</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£910</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1620</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £650)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>83%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|287212208337|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|287212208337|0","v1|287212208337|0")'><input class='vrm-input' id='vrm-inp-v1|287212208337|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="817" data-price="995" data-pmot="0.8900" data-item="v1|298125898653|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#4</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class="card-meta">? · ? · SO30***</span></div>
+    <a href="https://www.ebay.co.uk/itm/298125898653?_skw=skoda+fabia&amp;hash=item4569b0339d:g:RgIAAeSwsAFpmcdm" target="_blank" class="card-title">Skoda Fabia 1.9tdi VRS PD130</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£995</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2328</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£817</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1422</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>89%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|298125898653|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|298125898653|0","v1|298125898653|0")'><input class='vrm-input' id='vrm-inp-v1|298125898653|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ 1.9 TDI PD: injector seals £300–600. Timing belt every 60k.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="701" data-price="995" data-pmot="0.8900" data-item="v1|406756959444|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#5</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class="card-meta">? · ? · TN15***</span></div>
+    <a href="https://www.ebay.co.uk/itm/406756959444?_skw=ford+fiesta&amp;hash=item5eb49aa4d4:g:NLoAAeSwH4RpscXN" target="_blank" class="card-title">Ford Fiesta 1.4 Flame- Low Mileage,cheap runner.ULEZ</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£995</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2180</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£701</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1306</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £650)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>89%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|406756959444|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|406756959444|0","v1|406756959444|0")'><input class='vrm-input' id='vrm-inp-v1|406756959444|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="696" data-price="1000" data-pmot="0.8900" data-item="v1|406773704844|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#6</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class="card-meta">? · ? · ST19***</span></div>
+    <a href="https://www.ebay.co.uk/itm/406773704844?_skw=ford+fiesta&amp;hash=item5eb59a288c:g:ntEAAeSwjlJptsIv" target="_blank" class="card-title">FORD FIESTA TITANIUM MK7 5DR HATCH</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1000</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2180</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£696</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1306</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £650)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>89%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|406773704844|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|406773704844|0","v1|406773704844|0")'><input class='vrm-input' id='vrm-inp-v1|406773704844|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ General: check for rust, clutch, suspension. Overall reliable.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="726" data-price="800" data-pmot="0.6400" data-item="v1|257410091922|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><div class="thumb-empty">📷</div></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#7</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class="card-meta">? · ? · NN3***</span></div>
+    <a href="https://www.ebay.co.uk/itm/257410091922?_skw=ford+fiesta&amp;hash=item3beed64b92:g:llQAAeSwqjNpuAyO" target="_blank" class="card-title">Ford Fiesta Titanium Auto 1.4 NON RUNNER</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£800</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2180</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£726</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1136</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£320<small style="font-weight:400"> (w/c £1850)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>64%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|257410091922|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|257410091922|0","v1|257410091922|0")'><input class='vrm-input' id='vrm-inp-v1|257410091922|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <div class='repair-note'>⚠ Powershift DCT auto: known £1200–2000 gearbox failure. AVOID unless manual.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="50" data-price="1200" data-pmot="0.8800" data-item="v1|358325267583|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/0M0AAeSwvSNplybt/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/0M0AAeSwvSNplybt/s-l1600.jpg" alt="Skoda Fabia Ambiente Estate 1.4TDI 80 2006" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#8</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class="card-meta">2006 · 112k · TN12***</span></div>
+    <a href="https://www.ebay.co.uk/itm/358325267583?_skw=skoda+fabia&amp;hash=item536dd9ac7f:g:0M0AAeSwvSNplybt" target="_blank" class="card-title">Skoda Fabia Ambiente Estate 1.4TDI 80 2006</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1200</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2218</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£50</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£860</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£630<small style="font-weight:400"> (w/c £2370)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>88%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|358325267583|0'>AE06FYC</code> <small class='dim'>(plate_recognizer, 92%)</small></div>
+    <div class='repair-note'>⚠ 1.9 TDI PD: injector seals £300–600. Timing belt every 60k.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="no" data-vrm="yes" data-profit="-924" data-price="825" data-pmot="0.6700" data-item="v1|198179214167|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/ZfoAAeSwwPRpsvv~/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/ZfoAAeSwwPRpsvv~/s-l1600.jpg" alt="HONDA JAZZ 1.4 PETROL CAR -LONG MOT- ONLY 99,785 MILES! GOOD" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#9</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class='tag-ulez-fail'>✗ ULEZ fail</span><span class="card-meta">2005 · 100k · BS27***</span></div>
+    <a href="https://www.ebay.co.uk/itm/198179214167?_skw=honda+jazz&amp;hash=item2e2466d357:g:ZfoAAeSwwPRpsvv~" target="_blank" class="card-title">HONDA JAZZ 1.4 PETROL CAR -LONG MOT- ONLY 99,785 MILES! GOOD DRIVE -GOOD HISTORY</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£825</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1435</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-924</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£-489</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£1260<small style="font-weight:400"> (w/c £4980)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>67%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|198179214167|0'>YH05XBR</code> <small class='dim'>(plate_recognizer, 94%)</small></div>
+    <div class='repair-note'>⚠ CVT gearbox slip: £800–1500. Rust sills/rear arches. Generally very reliable.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="-1722" data-price="825" data-pmot="0.6500" data-item="v1|267608207058|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/sDkAAeSwchFptr5W/s-l1600.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/sDkAAeSwchFptr5W/s-l1600.jpg" alt="Honda Jazz 1.2 SE. Silver Metallic. Ulez Compliant. Well Mai" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#10</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span class="card-meta">2006 · 128k · BS31***</span></div>
+    <a href="https://www.ebay.co.uk/itm/267608207058?_skw=honda+jazz&amp;hash=item3e4eb12ed2:g:sDkAAeSwchFptr5W" target="_blank" class="card-title">Honda Jazz 1.2 SE. Silver Metallic. Ulez Compliant. Well Maintained.</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£825</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1373</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-1722</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£-1287</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£2000<small style="font-weight:400"> (w/c £7220)</small></span><span class="nl">Repairs</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>65%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|267608207058|0'>NL06UEM</code> <small class='dim'>(plate_recognizer, 95%)</small></div>
+    <div class='repair-note'>⚠ CVT gearbox slip: £800–1500. Rust sills/rear arches. Generally very reliable.</div>
+  </div>
+</div></div></details>
+  <div class="footer">
+    Dealerly 0.9.7 — SWAutos &nbsp;|&nbsp;
+    Estimates only. Always verify before bidding.
+  </div>
+  <script>
+/* Dark mode — applied before paint via inline script in <head> */
+function toggleDark() {
+  const cur  = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('dealerly_theme', next);
+  const btn = document.getElementById('dark-btn');
+  if (btn) btn.textContent = next === 'dark' ? '\u2600 Light' : '\u263e Dark';
+}
+
+/* Manual VRM — restore saved values from localStorage on load.
+   Uses data-item querySelectorAll so BOTH the top-3 strip instance and the
+   main grid instance of the same listing are updated together. */
+function _applyVrm(itemId, val) {
+  document.querySelectorAll(`.card[data-item="${itemId}"]`).forEach(card => {
+    const disp = card.querySelector('[id^="vrm-disp-"]');
+    const form = card.querySelector('.vrm-form');
+    if (disp) { disp.textContent = val; disp.className = 'vrm-saved'; }
+    if (form) form.style.display = 'none';
+  });
+}
+
+(function () {
+  const seen = new Set();
+  document.querySelectorAll('.card[data-item]').forEach(card => {
+    const id = card.dataset.item;
+    if (seen.has(id)) return;
+    seen.add(id);
+    const val = localStorage.getItem('vrm_' + id);
+    if (val) _applyVrm(id, val);
+  });
+})();
+
+function saveVrm(ev, itemId, iid) {
+  ev.preventDefault();
+  const inp = document.getElementById('vrm-inp-' + iid);
+  const val = inp.value.trim().toUpperCase().replace(/\s/g, '');
+  if (!val) return;
+  localStorage.setItem('vrm_' + itemId, val);
+  _applyVrm(itemId, val);
+}
+
+/* Filter + sort state */
+const state = {
+  dec: 'ALL', plat: 'ALL', ulez: 'ALL', vrm: 'ALL',
+  profMin: -99999, profMax: 99999, sort: 'profit_desc'
+};
+
+function applyFilters() {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  const cards = Array.from(grid.querySelectorAll('.card'));
+
+  cards.forEach(c => {
+    const show =
+      (state.dec  === 'ALL' || c.dataset.decision === state.dec)  &&
+      (state.plat === 'ALL' || c.dataset.platform === state.plat) &&
+      (state.ulez === 'ALL' || c.dataset.ulez     === state.ulez) &&
+      (state.vrm  === 'ALL' || c.dataset.vrm      === state.vrm)  &&
+      parseFloat(c.dataset.profit) >= state.profMin &&
+      parseFloat(c.dataset.profit) <= state.profMax;
+    c.classList.toggle('hidden', !show);
+  });
+
+  const visible = cards.filter(c => !c.classList.contains('hidden'));
+  visible.sort((a, b) => {
+    switch (state.sort) {
+      case 'profit_desc': return parseFloat(b.dataset.profit) - parseFloat(a.dataset.profit);
+      case 'profit_asc':  return parseFloat(a.dataset.profit) - parseFloat(b.dataset.profit);
+      case 'price_asc':   return parseFloat(a.dataset.price)  - parseFloat(b.dataset.price);
+      case 'price_desc':  return parseFloat(b.dataset.price)  - parseFloat(a.dataset.price);
+      case 'pmot_desc':   return parseFloat(b.dataset.pmot)   - parseFloat(a.dataset.pmot);
+    }
+    return 0;
+  });
+  visible.forEach(c => grid.appendChild(c));
+
+  const cnt = document.getElementById('result-count');
+  if (cnt) cnt.textContent = visible.length + ' listing' + (visible.length !== 1 ? 's' : '');
+}
+
+function setFilter(key, val, el) {
+  state[key] = val;
+  if (el) {
+    const grp = el.closest('.filter-group');
+    if (grp) grp.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+  applyFilters();
+}
+
+function setProfitRange() {
+  const lo = document.getElementById('prof-min');
+  const hi = document.getElementById('prof-max');
+  state.profMin = (lo && lo.value !== '') ? parseFloat(lo.value) : -99999;
+  state.profMax = (hi && hi.value !== '') ? parseFloat(hi.value) :  99999;
+  applyFilters();
+}
+
+function setSort(sel) {
+  state.sort = sel.value;
+  applyFilters();
+}
+</script>
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      applyFilters();
+      const theme = document.documentElement.getAttribute('data-theme');
+      const btn = document.getElementById('dark-btn');
+      if (btn) btn.textContent = theme === 'dark' ? '☀ Light' : '☾ Dark';
+    });
+  </script>
+</body>
+</html>

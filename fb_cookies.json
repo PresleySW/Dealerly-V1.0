@@ -1,0 +1,72 @@
+[
+  {
+    "name": "_GRECAPTCHA",
+    "value": "09AKhCRwhtaDUJ9rzr8t4Wua-gv1yh-hqowXbARhZm13IgyF9nio-d1d46qRA0e3RSKONb0dDDNXrxQWFkLEtTyCE",
+    "domain": "www.google.com",
+    "path": "/recaptcha",
+    "expires": 1789553666.273962,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "datr",
+    "value": "6h29aZBrEGfxluzB2aD66bMu",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1808561644.357961,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "sb",
+    "value": "6h29aUNDnIysdzW9cczrsbav",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1808561676.535968,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "wd",
+    "value": "1280x800",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1774606463,
+    "httpOnly": false,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "c_user",
+    "value": "100013609518033",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1805537676.535904,
+    "httpOnly": false,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "xs",
+    "value": "18%3AXXOF-RkRBVhqqQ%3A2%3A1774001673%3A-1%3A-1",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1805537676.536008,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "fr",
+    "value": "09jYJ7sJ2tvelSHjs.AWeVqcQGMU9jwn_XIvJftyM2FzU4yb9r5NvI3aYBpe6udlQkh4A.BpvR4N..AAA.0.0.BpvR4N.AWdomAuJD1Py0_dc_9FTEyqeGyw",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1781777677.507422,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  }
+]

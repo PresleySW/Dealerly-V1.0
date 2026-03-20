@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dealerly 0.9.9 — 2026-03-20 09:15</title>
+  <style>
+:root {
+  --bg:#f1f5f9; --surface:#fff; --surface2:#f8fafc;
+  --text:#0f172a; --dim:#64748b; --border:#e2e8f0;
+  --hover:#e2e8f0; --link:#1d4ed8;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+}
+[data-theme=dark] {
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d;
+  --text:#e6edf3; --dim:#8b949e; --border:#30363d;
+  --hover:#1f2937; --link:#58a6ff;
+  --shadow:0 1px 3px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+     background:var(--bg);color:var(--text);padding:20px 24px;line-height:1.45}
+.app-shell{max-width:1680px;margin:0 auto}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+code{background:var(--surface2);padding:2px 5px;border-radius:4px;font-size:.88em}
+small{font-size:.8em;color:var(--dim)}
+
+/* header */
+.page-header{display:flex;align-items:center;justify-content:space-between;
+             margin-bottom:8px;flex-wrap:wrap;gap:10px}
+h1{font-size:1.62em;letter-spacing:.01em;font-weight:720}
+.header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dark-toggle{padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);
+             background:var(--surface);color:var(--text);cursor:pointer;
+             font-size:.85em;font-weight:600;transition:all .12s}
+.dark-toggle:hover{border-color:var(--dim)}
+.meta{color:var(--dim);font-size:.9em;margin-bottom:20px}
+
+/* stat cards */
+.stat-grid{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.stat-card{background:var(--surface);border-radius:10px;padding:14px 18px;
+           box-shadow:var(--shadow);min-width:100px}
+.stat-card .sv{font-size:1.7em;font-weight:700;line-height:1.1}
+.stat-card .sl{font-size:.73em;color:var(--dim);margin-top:3px}
+
+/* section titles */
+.section-title{font-size:1.05em;font-weight:700;margin:28px 0 12px;color:var(--text)}
+
+/* top-3 grid */
+.top3-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+           gap:14px;margin-bottom:4px}
+
+/* filter bar */
+.filter-bar{background:var(--surface);border-radius:14px;padding:12px 14px;
+            box-shadow:var(--shadow);margin-bottom:14px;
+            display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+            position:sticky;top:10px;z-index:40;border:1px solid var(--border);
+            backdrop-filter:blur(6px)}
+.filter-group{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.filter-label{font-size:.75em;font-weight:700;color:var(--dim);
+              text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.fbtn{padding:6px 13px;border-radius:10px;border:1.5px solid var(--border);
+      background:var(--surface2);color:var(--text);cursor:pointer;
+      font-size:.82em;font-weight:650;transition:all .14s}
+.fbtn:hover{border-color:var(--dim);transform:translateY(-1px)}
+.fbtn.active{color:#fff;border-color:transparent}
+.fbtn[data-v=BUY].active{background:#22c55e}
+.fbtn[data-v=OFFER].active{background:#f59e0b}
+.fbtn[data-v=PASS].active{background:#94a3b8}
+.profit-range{display:flex;align-items:center;gap:4px}
+.profit-range input{width:70px;padding:4px 6px;border-radius:6px;
+                    border:1.5px solid var(--border);background:var(--surface2);
+                    color:var(--text);font-size:.82em}
+.sort-sel{padding:5px 10px;border-radius:7px;border:1.5px solid var(--border);
+          background:var(--surface2);color:var(--text);font-size:.82em;cursor:pointer}
+
+/* cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:10px}
+.card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);
+      display:flex;transition:box-shadow .15s,transform .15s;border:1px solid var(--border);overflow:hidden}
+.card:hover{box-shadow:0 8px 22px rgba(0,0,0,.12);transform:translateY(-1px)}
+.card.hidden{display:none!important}
+
+/* thumbnail — border-radius clips the left corners without overflow:hidden on the card,
+   allowing <details> expandables inside .card-body to open freely */
+.thumb-wrap{flex-shrink:0;width:236px;background:transparent;
+            border-radius:10px 0 0 10px;
+            display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb{width:236px;height:164px;object-fit:cover;display:block}
+.thumb-empty{width:236px;height:164px;display:flex;align-items:center;
+             justify-content:center;font-size:1.8em;color:var(--dim)}
+.card.featured{display:block}
+.card.featured .thumb-wrap{width:100%;border-radius:10px 10px 0 0}
+.card.featured .thumb,.card.featured .thumb-empty{width:100%;height:220px}
+.media-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 12px;
+           border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface2)}
+.compact .thumb-wrap{width:112px}
+.compact .thumb,.compact .thumb-empty{width:112px;height:84px}
+
+/* density modes */
+body[data-density=dense] .card-grid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:8px}
+body[data-density=dense] .thumb-wrap{width:188px}
+body[data-density=dense] .thumb,body[data-density=dense] .thumb-empty{width:188px;height:132px}
+body[data-density=dense] .card.featured .thumb,body[data-density=dense] .card.featured .thumb-empty{height:190px}
+body[data-density=dense] .card-body{padding:9px 11px}
+body[data-density=dense] .num-row{gap:7px}
+body[data-density=dense] .meta{margin-bottom:16px}
+body[data-density=dense] .section-title{margin:22px 0 10px}
+
+/* card body */
+.card-body{flex:1;padding:11px 13px;min-width:0}
+.card-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.rank{font-size:.75em;font-weight:700;color:var(--dim)}
+.card-meta{font-size:.74em;color:var(--dim);margin-left:auto}
+.card-title{display:block;font-weight:680;font-size:.98em;margin-bottom:8px;
+            color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-title:hover{color:var(--link)}
+
+/* numbers row */
+.num-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.num{display:flex;flex-direction:column}
+.nv{font-size:.9em;font-weight:700}
+.nl{font-size:.68em;color:var(--dim);margin-top:1px}
+.profit-good{color:#22c55e}
+.profit-mid{color:#f59e0b}
+.profit-bad{color:#ef4444}
+
+/* tags */
+.tag-ulez-ok{font-size:.75em;color:#22c55e;font-weight:600}
+.tag-ulez-fail{font-size:.75em;color:#ef4444;font-weight:600}
+.tag-mileage{font-size:.72em;color:#0369a1;background:#e0f2fe;padding:2px 8px;
+             border-radius:8px;font-weight:700}
+.tag-mileage.is-missing{color:#64748b;background:#e2e8f0}
+[data-theme=dark] .tag-mileage{color:#bae6fd;background:#0b3350}
+[data-theme=dark] .tag-mileage.is-missing{color:#94a3b8;background:#1f2937}
+.tag-writeoff{font-size:.75em;color:#7a4f10;background:#f8e8bd;padding:2px 8px;
+              border-radius:8px;font-weight:700;margin-right:4px}
+[data-theme=dark] .tag-writeoff{color:#f3d598;background:#3a2f1c}
+.tag-basket{font-size:.75em;color:#0c4a6e;background:#bae6fd;padding:2px 8px;
+            border-radius:8px;font-weight:700;margin-right:4px}
+[data-theme=dark] .tag-basket{color:#bae6fd;background:#0b3350}
+.warn{color:#7a4f10;font-weight:600}
+[data-theme=dark] .warn{color:#d9b16d}
+.dim{color:var(--dim)}
+
+/* vrm */
+.vrm-row{font-size:.82em;margin-bottom:5px;display:flex;align-items:center;
+         flex-wrap:wrap;gap:4px}
+.vrm-form{display:inline-flex;gap:4px;align-items:center}
+.vrm-input{padding:3px 6px;border-radius:5px;border:1.5px solid var(--border);
+           background:var(--surface2);color:var(--text);font-size:.9em;width:88px}
+.vrm-btn{padding:3px 8px;border-radius:5px;border:1.5px solid var(--border);
+         background:var(--surface);color:var(--text);cursor:pointer;font-size:.8em}
+.vrm-saved{font-weight:700;color:#22c55e}
+.cart-btn{margin:4px 0 6px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);
+         background:var(--surface2);color:var(--text);font-size:.78em;font-weight:600;cursor:pointer}
+.cart-btn:hover{border-color:var(--dim)}
+.cart-btn.in-cart{background:#0f3f2a;border-color:#22c55e;color:#d1fae5}
+
+/* hints */
+.offer-hint{font-size:.82em;font-weight:600;color:#f59e0b;margin-bottom:4px}
+.offer-hint.ok{color:#22c55e}
+.repair-note{font-size:.76em;color:#7a4f10;margin-bottom:4px;padding:4px 8px;
+             background:#f7ead1;border-radius:6px}
+[data-theme=dark] .repair-note{background:#342a1f;color:#d9b16d}
+
+/* expandables */
+.expandable{margin-top:6px}
+.expandable summary{cursor:pointer;font-size:.8em;color:var(--link);
+                    user-select:none;list-style:none;display:inline-flex;
+                    align-items:center;gap:4px}
+.expandable summary::-webkit-details-marker{display:none}
+.expandable summary::before{content:'\25b6';font-size:.65em;
+                             display:inline-block;transition:transform .15s}
+.expandable[open] summary::before{transform:rotate(90deg)}
+.expand-body{margin-top:6px;font-size:.82em;line-height:1.5;
+             background:var(--surface2);border-radius:6px;
+             padding:8px 10px;border:1px solid var(--border)}
+.copy-btn{margin-top:5px;padding:3px 10px;border-radius:5px;
+          border:1px solid var(--border);background:var(--surface);
+          color:var(--text);cursor:pointer;font-size:.78em}
+
+/* near-miss grid */
+.nearmiss-grid{display:grid;
+               grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+               gap:10px;margin-top:8px}
+
+/* avoid toggle */
+.avoid-toggle{cursor:pointer;color:#7a4f10;font-weight:700;font-size:1em;
+              user-select:none;padding:8px 0;margin-top:28px;display:block}
+[data-theme=dark] .avoid-toggle{color:#d9b16d}
+
+/* footer */
+.footer{margin-top:36px;color:var(--dim);font-size:.78em;
+        border-top:1px solid var(--border);padding-top:12px}
+</style>
+  <script>
+    /* Apply saved/preferred theme before first paint (avoids flash) */
+    (function(){
+      const s = localStorage.getItem('dealerly_theme');
+      document.documentElement.setAttribute('data-theme', s || 'dark');
+      const d = localStorage.getItem('dealerly_density') || 'comfortable';
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.setAttribute('data-density', d);
+      });
+    })();
+  </script>
+</head>
+<body>
+  <div class="app-shell">
+  <div class="page-header">
+    <h1>Dealerly 0.9.9 — Deal Intelligence</h1>
+    <div class="header-actions">
+      <button class="dark-toggle" id="density-btn" onclick="toggleDensity()">Dense View</button>
+      <button class="dark-toggle" id="dark-btn" onclick="toggleDark()">☾ Dark</button>
+    </div>
+  </div>
+  <p class="meta">
+    2026-03-20 09:15 &nbsp;|&nbsp; Capital: £3000
+    &nbsp;|&nbsp; Band: £800–£3000
+    &nbsp;|&nbsp; All platforms (production) | auction=False
+    &nbsp;|&nbsp; Sources: ebay + motors
+  </p>
+  <div class="stat-grid"><div class="stat-card"><div class="sv" style="color:#22c55e">0</div><div class="sl">BUY</div></div><div class="stat-card"><div class="sv" style="color:#f59e0b">8</div><div class="sl">OFFER</div></div><div class="stat-card"><div class="sv" style="color:#94a3b8">7</div><div class="sl">PASS</div></div><div class="stat-card"><div class="sv" style="color:#ef4444">15</div><div class="sl">AVOID</div></div><div class="stat-card"><div class="sv">30</div><div class="sl">Scored</div></div><div class="stat-card"><div class="sv" style="color:#0369a1">1/15 top · 8/27 all</div><div class="sl">VRMs found</div></div><div class="stat-card"><div class="sv" style="color:#0369a1">0/15 top · 7/27 all</div><div class="sl">DVSA verified</div></div><div class="stat-card"><div class="sv" style="color:#06b6d4">0 · £0/£3000</div><div class="sl">Budget basket</div></div><div class="stat-card"><div class="sv" style="color:#64748b">ebay:15</div><div class="sl">Top platform mix</div></div><div class="stat-card"><div class="sv" style="color:#7c3aed">12/14</div><div class="sl">VRM enriched</div></div></div>
+  <div class="section-title">Top 3 Opportunities</div><div class="top3-grid"><div class="card featured" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="151" data-price="2350" data-pmot="0.7900" data-basket="no" data-item="v1|227263776008|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/ISgAAeSwykppu-GC/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/ISgAAeSwykppu-GC/s-l225.jpg" alt="Honda Civic Type S Ep2 2005 1.6 Vtec Car For Sale" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="media-meta"><span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span><span class="card-meta">2005 · B77***</span></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span>  <span class='tag-mileage is-missing'>mileage n/a</span></div>
+    <a href="https://www.ebay.co.uk/itm/227263776008?_skw=honda+civic&amp;hash=item34e9fa0508:g:ISgAAeSwykppu-GC" target="_blank" class="card-title">Honda Civic Type S Ep2 2005 1.6 Vtec Car For Sale</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2350</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£3077</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£151</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£2111</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>79%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|227263776008|0f'>OE05LCJ</code> <small class='dim'>(regex_description_cached_cached_cached_cached, 75%)</small></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|227263776008|0f' onclick="toggleCart('v1|227263776008|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£2,100</strong></div><div class='repair-note'>Note: i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div><details class='expandable'><summary>AI negotiation message</summary><div class='expand-body' id='msg_v1|2272637'>Hi, I&#x27;d like to offer £2100 for the Honda Civic. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|2272637').innerText);this.textContent='Copied';setTimeout(()=>this.textContent='Copy message',1500)">Copy message</button></details>
+  </div>
+</div>
+<div class="card featured" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="143" data-price="1990" data-pmot="0.7900" data-basket="no" data-item="v1|397732213023|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/NrYAAeSwgH9puwCL/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/NrYAAeSwgH9puwCL/s-l225.jpg" alt="2009 Honda CIVIC 1.4 I -DSi SE Petrol Manual 5 Door" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="media-meta"><span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span><span class="card-meta">2009 · WF1***</span></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#2</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span>  <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span></div>
+    <a href="https://www.ebay.co.uk/itm/397732213023?_skw=honda+civic&amp;hash=item5c9aaff11f:g:NrYAAeSwgH9puwCL" target="_blank" class="card-title">2009 Honda CIVIC 1.4 I -DSi SE Petrol Manual 5 Door</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1990</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2677</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£143</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1743</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>79%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|397732213023|0f'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|397732213023|0","v1|397732213023|0f")'><input class='vrm-input' id='vrm-inp-v1|397732213023|0f' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|397732213023|0f' onclick="toggleCart('v1|397732213023|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£1,750</strong></div><div class='repair-note'>Note: i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div><details class='expandable'><summary>AI negotiation message</summary><div class='expand-body' id='msg_v1|3977322'>Hi, I&#x27;d like to offer £1750 for the Honda Civic. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3977322').innerText);this.textContent='Copied';setTimeout(()=>this.textContent='Copy message',1500)">Copy message</button></details>
+  </div>
+</div>
+<div class="card featured" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="83" data-price="1500" data-pmot="0.7800" data-basket="no" data-item="v1|257406317057|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/9L8AAeSwG9lpnwPC/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/9L8AAeSwG9lpnwPC/s-l225.jpg" alt="Focus cc 2010" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  <div class="media-meta"><span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span><span class="card-meta">2010 · BR7***</span></div>
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#3</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span>  <span class='tag-mileage is-missing'>mileage n/a</span></div>
+    <a href="https://www.ebay.co.uk/itm/257406317057?_skw=ford+focus&amp;hash=item3bee9cb201:g:9L8AAeSwG9lpnwPC" target="_blank" class="card-title">Focus cc 2010</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1500</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2025</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£83</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1193</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£120<small style="font-weight:400"> (w/c £350)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>78%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|257406317057|0f'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|257406317057|0","v1|257406317057|0f")'><input class='vrm-input' id='vrm-inp-v1|257406317057|0f' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|257406317057|0f' onclick="toggleCart('v1|257406317057|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£1,200</strong></div><details class='expandable'><summary>AI negotiation message</summary><div class='expand-body' id='msg_v1|2574063'>Hi, I&#x27;d like to offer £1200 for the Focus cc. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|2574063').innerText);this.textContent='Copied';setTimeout(()=>this.textContent='Copy message',1500)">Copy message</button></details>
+  </div>
+</div></div>
+  <div class="section-title">All Listings <span style="color:var(--dim);font-weight:400;font-size:.85em">(15)</span></div><div class="filter-bar"><div class="filter-group"><span class="filter-label">Decision</span><button class="fbtn active" data-v="ALL" onclick="setFilter('dec','ALL',this)">All</button><button class="fbtn" data-v="BUY"   onclick="setFilter('dec','BUY',this)">BUY</button><button class="fbtn" data-v="OFFER" onclick="setFilter('dec','OFFER',this)">OFFER</button><button class="fbtn" data-v="PASS"  onclick="setFilter('dec','PASS',this)">PASS</button></div><div class="filter-group"><span class="filter-label">ULEZ</span><button class="fbtn active" data-v="ALL" onclick="setFilter('ulez','ALL',this)">All</button><button class="fbtn" data-v="yes" onclick="setFilter('ulez','yes',this)">✓ ULEZ</button><button class="fbtn" data-v="no"  onclick="setFilter('ulez','no',this)">Fail</button></div><div class="filter-group"><span class="filter-label">VRM</span><button class="fbtn active" data-v="ALL" onclick="setFilter('vrm','ALL',this)">All</button><button class="fbtn" data-v="yes" onclick="setFilter('vrm','yes',this)">Found</button><button class="fbtn" data-v="no"  onclick="setFilter('vrm','no',this)">Missing</button></div><div class="filter-group"><span class="filter-label">Profit £</span><div class="profit-range"><input type="number" id="prof-min" placeholder="min" oninput="setProfitRange()"><span style="color:var(--dim)">–</span><input type="number" id="prof-max" placeholder="max" oninput="setProfitRange()"></div></div><div class="filter-group"><span class="filter-label">Sort</span><select class="sort-sel" onchange="setSort(this)"><option value="profit_desc">Profit ↓</option><option value="profit_asc">Profit ↑</option><option value="price_asc">Price ↑</option><option value="price_desc">Price ↓</option><option value="pmot_desc">p_MOT ↓</option></select></div><span id="cart-summary" data-budget="3000" style="font-size:.8em;color:var(--dim)"></span><span id="result-count" style="font-size:.8em;color:var(--dim);margin-left:auto"></span></div><div class="card-grid" id="main-grid"><div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="151" data-price="2350" data-pmot="0.7900" data-basket="no" data-item="v1|227263776008|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/ISgAAeSwykppu-GC/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/ISgAAeSwykppu-GC/s-l225.jpg" alt="Honda Civic Type S Ep2 2005 1.6 Vtec Car For Sale" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2005 · B77***</span></div>
+    <a href="https://www.ebay.co.uk/itm/227263776008?_skw=honda+civic&amp;hash=item34e9fa0508:g:ISgAAeSwykppu-GC" target="_blank" class="card-title">Honda Civic Type S Ep2 2005 1.6 Vtec Car For Sale</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2350</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£3077</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£151</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£2111</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>79%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|227263776008|0'>OE05LCJ</code> <small class='dim'>(regex_description_cached_cached_cached_cached, 75%)</small></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|227263776008|0' onclick="toggleCart('v1|227263776008|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£2,100</strong></div><div class='repair-note'>Note: i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div><details class='expandable'><summary>AI negotiation message</summary><div class='expand-body' id='msg_v1|2272637'>Hi, I&#x27;d like to offer £2100 for the Honda Civic. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|2272637').innerText);this.textContent='Copied';setTimeout(()=>this.textContent='Copy message',1500)">Copy message</button></details>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="143" data-price="1990" data-pmot="0.7900" data-basket="no" data-item="v1|397732213023|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/NrYAAeSwgH9puwCL/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/NrYAAeSwgH9puwCL/s-l225.jpg" alt="2009 Honda CIVIC 1.4 I -DSi SE Petrol Manual 5 Door" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#2</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2009 · WF1***</span></div>
+    <a href="https://www.ebay.co.uk/itm/397732213023?_skw=honda+civic&amp;hash=item5c9aaff11f:g:NrYAAeSwgH9puwCL" target="_blank" class="card-title">2009 Honda CIVIC 1.4 I -DSi SE Petrol Manual 5 Door</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1990</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2677</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£143</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1743</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>79%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|397732213023|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|397732213023|0","v1|397732213023|0")'><input class='vrm-input' id='vrm-inp-v1|397732213023|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|397732213023|0' onclick="toggleCart('v1|397732213023|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£1,750</strong></div><div class='repair-note'>Note: i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div><details class='expandable'><summary>AI negotiation message</summary><div class='expand-body' id='msg_v1|3977322'>Hi, I&#x27;d like to offer £1750 for the Honda Civic. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3977322').innerText);this.textContent='Copied';setTimeout(()=>this.textContent='Copy message',1500)">Copy message</button></details>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="83" data-price="1500" data-pmot="0.7800" data-basket="no" data-item="v1|257406317057|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/9L8AAeSwG9lpnwPC/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/9L8AAeSwG9lpnwPC/s-l225.jpg" alt="Focus cc 2010" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#3</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2010 · BR7***</span></div>
+    <a href="https://www.ebay.co.uk/itm/257406317057?_skw=ford+focus&amp;hash=item3bee9cb201:g:9L8AAeSwG9lpnwPC" target="_blank" class="card-title">Focus cc 2010</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1500</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2025</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£83</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1193</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£120<small style="font-weight:400"> (w/c £350)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>78%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|257406317057|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|257406317057|0","v1|257406317057|0")'><input class='vrm-input' id='vrm-inp-v1|257406317057|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|257406317057|0' onclick="toggleCart('v1|257406317057|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£1,200</strong></div><details class='expandable'><summary>AI negotiation message</summary><div class='expand-body' id='msg_v1|2574063'>Hi, I&#x27;d like to offer £1200 for the Focus cc. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|2574063').innerText);this.textContent='Copied';setTimeout(()=>this.textContent='Copy message',1500)">Copy message</button></details>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="91" data-price="1295" data-pmot="0.8000" data-basket="no" data-item="v1|236682779783|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/UDYAAeSwojBpsqLP/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/UDYAAeSwojBpsqLP/s-l225.jpg" alt="Ford Focus 1600 Sport 2011 Petrol Engine" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#4</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2011 · LE3***</span></div>
+    <a href="https://www.ebay.co.uk/itm/236682779783?_skw=ford+focus&amp;hash=item371b649c87:g:UDYAAeSwojBpsqLP" target="_blank" class="card-title">Ford Focus 1600 Sport 2011 Petrol Engine</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1295</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1843</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£91</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£996</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £600)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|236682779783|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|236682779783|0","v1|236682779783|0")'><input class='vrm-input' id='vrm-inp-v1|236682779783|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|236682779783|0' onclick="toggleCart('v1|236682779783|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£1,000</strong></div><div class='repair-note'>Note: Duratec/Ti-VCT petrol: reliable. Clutch at 80k+ £350. Minor rust on pre-2012.</div><details class='expandable'><summary>AI negotiation message</summary><div class='expand-body' id='msg_v1|2366827'>Hi, I&#x27;d like to offer £1000 for the Ford Focus. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|2366827').innerText);this.textContent='Copied';setTimeout(()=>this.textContent='Copy message',1500)">Copy message</button></details>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="96" data-price="1800" data-pmot="0.7900" data-basket="no" data-item="v1|188156140071|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/DfIAAeSwdRtpsDvX/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/DfIAAeSwdRtpsDvX/s-l225.jpg" alt="2007 Volkswagen Polo 1.2 Petrol – ULEZ Compliant" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#5</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2007 · GU46***</span></div>
+    <a href="https://www.ebay.co.uk/itm/188156140071?_skw=volkswagen+polo&amp;hash=item2bcefada27:g:DfIAAeSwdRtpsDvX" target="_blank" class="card-title">2007 Volkswagen Polo 1.2 Petrol – ULEZ Compliant</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1800</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2430</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£96</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1506</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£180<small style="font-weight:400"> (w/c £750)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>79%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|188156140071|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|188156140071|0","v1|188156140071|0")'><input class='vrm-input' id='vrm-inp-v1|188156140071|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|188156140071|0' onclick="toggleCart('v1|188156140071|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£1,500</strong></div><div class='repair-note'>Note: 1.2 TSI: timing chain £800–1500. Coil packs. Cambelt on older 1.4.</div><details class='expandable'><summary>AI negotiation message</summary><div class='expand-body' id='msg_v1|1881561'>Hi, I&#x27;d like to offer £1500 for the Volkswagen Polo. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|1881561').innerText);this.textContent='Copied';setTimeout(()=>this.textContent='Copy message',1500)">Copy message</button></details>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="96" data-price="2600" data-pmot="0.7700" data-basket="no" data-item="v1|397737283683|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/Y~MAAeSwt4xpuaaA/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/Y~MAAeSwt4xpuaaA/s-l225.jpg" alt="Volkswagen Polo 2013" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#6</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage'>124k mi</span><span class="card-meta">2013 · WS11***</span></div>
+    <a href="https://www.ebay.co.uk/itm/397737283683?_skw=volkswagen+polo&amp;hash=item5c9afd5063:g:Y~MAAeSwt4xpuaaA" target="_blank" class="card-title">Volkswagen Polo 2013</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2600</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£3300</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£96</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£2306</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£180<small style="font-weight:400"> (w/c £750)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>77%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|397737283683|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|397737283683|0","v1|397737283683|0")'><input class='vrm-input' id='vrm-inp-v1|397737283683|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|397737283683|0' onclick="toggleCart('v1|397737283683|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£2,300</strong></div><div class='repair-note'>Note: 1.2 TSI: timing chain £800–1500. Coil packs. Cambelt on older 1.4.</div><details class='expandable'><summary>AI negotiation message</summary><div class='expand-body' id='msg_v1|3977372'>Hi, I&#x27;d like to offer £2300 for the Volkswagen Polo. Happy to collect at your convenience. Thanks.</div><button class='copy-btn' onclick="navigator.clipboard.writeText(document.getElementById('msg_v1|3977372').innerText);this.textContent='Copied';setTimeout(()=>this.textContent='Copy message',1500)">Copy message</button></details>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="19" data-price="1700" data-pmot="0.7500" data-basket="no" data-item="v1|406777300833|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/mPwAAeSwx0Vpr942/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/mPwAAeSwx0Vpr942/s-l225.jpg" alt="Skoda octavia 2009 1.6 Mpi Petrol Manual 101 BHP Only 84000 " class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#7</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage'>84k mi</span><span class="card-meta">2009 · HU3***</span></div>
+    <a href="https://www.ebay.co.uk/itm/406777300833?_skw=skoda+octavia&amp;hash=item5eb5d10761:g:mPwAAeSwx0Vpr942" target="_blank" class="card-title">Skoda octavia 2009 1.6 Mpi Petrol Manual 101 BHP Only 84000 Miles</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1700</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2281</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£19</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1329</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£220<small style="font-weight:400"> (w/c £900)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>75%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|406777300833|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|406777300833|0","v1|406777300833|0")'><input class='vrm-input' id='vrm-inp-v1|406777300833|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|406777300833|0' onclick="toggleCart('v1|406777300833|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£1,350</strong></div><div class='repair-note'>Note: TDI: DSG/DQ200 issues, DPF. vRS: clutch £800. Timing belt.</div>
+  </div>
+</div>
+<div class="card" data-decision="OFFER" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="16" data-price="1299" data-pmot="0.8200" data-basket="no" data-item="v1|257406986784|0" style="border-left:4px solid #f59e0b">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/X8oAAeSwoONpqAYS/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/X8oAAeSwoONpqAYS/s-l225.jpg" alt="Scoda Octavia 1.6 Mpi 2011 ULEZ COMPLIANT" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#8</span> <span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">OFFER</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2011 · CR4***</span></div>
+    <a href="https://www.ebay.co.uk/itm/257406986784?_skw=skoda+octavia&amp;hash=item3beea6ea20:g:X8oAAeSwoONpqAYS" target="_blank" class="card-title">Scoda Octavia 1.6 Mpi 2011 ULEZ COMPLIANT</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1299</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1843</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£16</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£925</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£220<small style="font-weight:400"> (w/c £900)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>82%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|257406986784|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|257406986784|0","v1|257406986784|0")'><input class='vrm-input' id='vrm-inp-v1|257406986784|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|257406986784|0' onclick="toggleCart('v1|257406986784|0')">Add to cart</button>
+    <div class='offer-hint'>Offer around: <strong>£950</strong></div><div class='repair-note'>Note: TDI: DSG/DQ200 issues, DPF. vRS: clutch £800. Timing belt.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-14" data-price="1400" data-pmot="0.7600" data-basket="no" data-item="v1|137117535909|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/~08AAeSw0eVplIxf/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/~08AAeSw0eVplIxf/s-l225.jpg" alt="2010 Ford Focus 1.8 Zetec s 3dr PETROL Manual" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#9</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2010 · MK44***</span></div>
+    <a href="https://www.ebay.co.uk/itm/137117535909?_skw=ford+focus&amp;hash=item1fecd78ea5:g:~08AAeSw0eVplIxf" target="_blank" class="card-title">2010 Ford Focus 1.8 Zetec s 3dr PETROL Manual</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1400</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1843</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-14</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£996</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£150<small style="font-weight:400"> (w/c £600)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>76%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|137117535909|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|137117535909|0","v1|137117535909|0")'><input class='vrm-input' id='vrm-inp-v1|137117535909|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|137117535909|0' onclick="toggleCart('v1|137117535909|0')">Add to cart</button>
+    <div class='offer-hint'>Negotiate to: <strong>£1,000</strong></div><div class='repair-note'>Note: Duratec/Ti-VCT petrol: reliable. Clutch at 80k+ £350. Minor rust on pre-2012.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-17" data-price="1500" data-pmot="0.8200" data-basket="no" data-item="v1|157765809045|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/7r8AAeSwgBlpumxk/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/7r8AAeSwgBlpumxk/s-l225.jpg" alt="skoda octavia 2015" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#10</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2015 · L20***</span></div>
+    <a href="https://www.ebay.co.uk/itm/157765809045?_skw=skoda+octavia&amp;hash=item24bb933395:g:7r8AAeSwgBlpumxk" target="_blank" class="card-title">skoda octavia 2015</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1500</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2025</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-17</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1093</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£220<small style="font-weight:400"> (w/c £900)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>82%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|157765809045|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|157765809045|0","v1|157765809045|0")'><input class='vrm-input' id='vrm-inp-v1|157765809045|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|157765809045|0' onclick="toggleCart('v1|157765809045|0')">Add to cart</button>
+    <div class='offer-hint'>Negotiate to: <strong>£1,100</strong></div><div class='repair-note'>Note: TDI: DSG/DQ200 issues, DPF. vRS: clutch £800. Timing belt.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-44" data-price="2000" data-pmot="0.8000" data-basket="no" data-item="v1|389742063284|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/RoQAAeSwzNppqdXT/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/RoQAAeSwzNppqdXT/s-l225.jpg" alt="2013 Red Ford Focus 1.0 Petrol Manual 5 Door Hatchback" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#11</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2013 · WA11***</span></div>
+    <a href="https://www.ebay.co.uk/itm/389742063284?_skw=ford+focus&amp;hash=item5abe6feeb4:g:RoQAAeSwzNppqdXT" target="_blank" class="card-title">2013 Red Ford Focus 1.0 Petrol Manual 5 Door Hatchback</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2000</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2517</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-44</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1566</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£200<small style="font-weight:400"> (w/c £950)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|389742063284|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|389742063284|0","v1|389742063284|0")'><input class='vrm-input' id='vrm-inp-v1|389742063284|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|389742063284|0' onclick="toggleCart('v1|389742063284|0')">Add to cart</button>
+    <div class='offer-hint'>Negotiate to: <strong>£1,550</strong></div><div class='repair-note'>Note: 1.0 EcoBoost: coolant-to-cylinder head issue. Same as Fiesta.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="-90" data-price="1200" data-pmot="0.7800" data-basket="no" data-item="v1|257414787230|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/UoAAAeSw9l1piwah/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/UoAAAeSw9l1piwah/s-l225.jpg" alt="Skoda octavia Vrs Estate 2006 2.0tdi Manual" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#12</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2006 · DN18***</span></div>
+    <a href="https://www.ebay.co.uk/itm/257414787230?_skw=skoda+octavia&amp;hash=item3bef1df09e:g:UoAAAeSw9l1piwah" target="_blank" class="card-title">Skoda octavia Vrs Estate 2006 2.0tdi Manual</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1200</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1620</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-90</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£720</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£220<small style="font-weight:400"> (w/c £900)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>78%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|257414787230|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|257414787230|0","v1|257414787230|0")'><input class='vrm-input' id='vrm-inp-v1|257414787230|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|257414787230|0' onclick="toggleCart('v1|257414787230|0')">Add to cart</button>
+    <div class='repair-note'>Note: TDI: DSG/DQ200 issues, DPF. vRS: clutch £800. Timing belt.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-117" data-price="2250" data-pmot="0.7900" data-basket="no" data-item="v1|117093256852|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/bt8AAeSwkTtpoLi1/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/bt8AAeSwkTtpoLi1/s-l225.jpg" alt="honda civic 1.8 petrol 2009 ulez free" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#13</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2009 · BS4***</span></div>
+    <a href="https://www.ebay.co.uk/itm/117093256852?_skw=honda+civic&amp;hash=item1b434d4e94:g:bt8AAeSwkTtpoLi1" target="_blank" class="card-title">honda civic 1.8 petrol 2009 ulez free</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2250</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2677</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-117</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1743</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>79%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|117093256852|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|117093256852|0","v1|117093256852|0")'><input class='vrm-input' id='vrm-inp-v1|117093256852|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|117093256852|0' onclick="toggleCart('v1|117093256852|0')">Add to cart</button>
+    <div class='offer-hint'>Negotiate to: <strong>£1,750</strong></div><div class='repair-note'>Note: i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="-111" data-price="1995" data-pmot="0.9200" data-basket="no" data-item="v1|177973525672|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/LqIAAeSwWC5pu2r-/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/LqIAAeSwWC5pu2r-/s-l225.jpg" alt="TOYOTA  AURIS 1.4 TR D" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#14</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">? · MK18***</span></div>
+    <a href="https://www.ebay.co.uk/itm/177973525672?_skw=toyota+auris&amp;hash=item29700c7ca8:g:LqIAAeSwWC5pu2r-" target="_blank" class="card-title">TOYOTA  AURIS 1.4 TR D</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1995</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2352</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-111</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1494</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£120<small style="font-weight:400"> (w/c £550)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#22c55e;font-weight:700'>92%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|177973525672|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|177973525672|0","v1|177973525672|0")'><input class='vrm-input' id='vrm-inp-v1|177973525672|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|177973525672|0' onclick="toggleCart('v1|177973525672|0')">Add to cart</button>
+    <div class='offer-hint'>Negotiate to: <strong>£1,500</strong></div><div class='repair-note'>Note: Hybrid: check battery condition. 1.6 petrol very reliable.</div>
+  </div>
+</div>
+<div class="card" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-244" data-price="2200" data-pmot="0.8000" data-basket="no" data-item="v1|188165683947|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/030AAeSwlVRptu4M/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/030AAeSwlVRptu4M/s-l225.jpg" alt="Ford Focus 1.0 Eco Boost 2015 Petrol Manual" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#15</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2015 · WS3***</span></div>
+    <a href="https://www.ebay.co.uk/itm/188165683947?_skw=ford+focus&amp;hash=item2bcf8c7aeb:g:030AAeSwlVRptu4M" target="_blank" class="card-title">Ford Focus 1.0 Eco Boost 2015 Petrol Manual</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2200</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2517</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-244</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1566</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£200<small style="font-weight:400"> (w/c £950)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|188165683947|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|188165683947|0","v1|188165683947|0")'><input class='vrm-input' id='vrm-inp-v1|188165683947|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|188165683947|0' onclick="toggleCart('v1|188165683947|0')">Add to cart</button>
+    <div class='offer-hint'>Negotiate to: <strong>£1,550</strong></div><div class='repair-note'>Note: 1.0 EcoBoost: coolant-to-cylinder head issue. Same as Fiesta.</div>
+  </div>
+</div></div>
+  <div class="section-title">Near-Miss — Worth Negotiating <span style="color:var(--dim);font-weight:400;font-size:.85em">(listed just above your max bid)</span></div><div class="nearmiss-grid"><div class="card compact" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-44" data-price="2000" data-pmot="0.8000" data-basket="no" data-item="v1|389742063284|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/RoQAAeSwzNppqdXT/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/RoQAAeSwzNppqdXT/s-l225.jpg" alt="2013 Red Ford Focus 1.0 Petrol Manual 5 Door Hatchback" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2013 · WA11***</span></div>
+    <a href="https://www.ebay.co.uk/itm/389742063284?_skw=ford+focus&amp;hash=item5abe6feeb4:g:RoQAAeSwzNppqdXT" target="_blank" class="card-title">2013 Red Ford Focus 1.0 Petrol Manual 5 Door Hatchback</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2000</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2517</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-44</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1566</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£200<small style="font-weight:400"> (w/c £950)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>80%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|389742063284|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|389742063284|0","v1|389742063284|0")'><input class='vrm-input' id='vrm-inp-v1|389742063284|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|389742063284|0' onclick="toggleCart('v1|389742063284|0')">Add to cart</button>
+    <div class='offer-hint'>Negotiate to: <strong>£1,550</strong></div><div class='repair-note'>Note: 1.0 EcoBoost: coolant-to-cylinder head issue. Same as Fiesta.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="PASS" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="-117" data-price="2250" data-pmot="0.7900" data-basket="no" data-item="v1|117093256852|0" style="border-left:4px solid #94a3b8">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/bt8AAeSwkTtpoLi1/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/bt8AAeSwkTtpoLi1/s-l225.jpg" alt="honda civic 1.8 petrol 2009 ulez free" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#2</span> <span style="background:#94a3b8;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">PASS</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2009 · BS4***</span></div>
+    <a href="https://www.ebay.co.uk/itm/117093256852?_skw=honda+civic&amp;hash=item1b434d4e94:g:bt8AAeSwkTtpoLi1" target="_blank" class="card-title">honda civic 1.8 petrol 2009 ulez free</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2250</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2677</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-117</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1743</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£170<small style="font-weight:400"> (w/c £700)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>79%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|117093256852|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|117093256852|0","v1|117093256852|0")'><input class='vrm-input' id='vrm-inp-v1|117093256852|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|117093256852|0' onclick="toggleCart('v1|117093256852|0')">Add to cart</button>
+    <div class='offer-hint'>Negotiate to: <strong>£1,750</strong></div><div class='repair-note'>Note: i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div>
+  </div>
+</div></div>
+  <details><summary class="avoid-toggle">Review Recommended (10 listings) — click to expand</summary><p style="font-size:.85em;color:#7a4f10;margin:8px 0">These listings need a second look (verification gaps, stronger risk signals, or margin pressure). Use this section as a manual review queue before bidding.</p><div class="nearmiss-grid"><div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="yes" data-vrm="no" data-profit="3559" data-price="2995" data-pmot="0.8300" data-basket="no" data-item="v1|389757281667|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/pbQAAeSwDBBptz7m/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/pbQAAeSwDBBptz7m/s-l225.jpg" alt="Ford focus estate 2016 Diesel white good condition " class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#1</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2016 · GU5***</span></div>
+    <a href="https://www.ebay.co.uk/itm/389757281667?_skw=ford+focus&amp;hash=item5abf582583:g:pbQAAeSwDBBptz7m" target="_blank" class="card-title">Ford focus estate 2016 Diesel white good condition </a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2995</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£7515</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£3559</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£6164</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£200<small style="font-weight:400"> (w/c £850)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>83%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|389757281667|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|389757281667|0","v1|389757281667|0")'><input class='vrm-input' id='vrm-inp-v1|389757281667|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|389757281667|0' onclick="toggleCart('v1|389757281667|0')">Add to cart</button>
+    <div class='repair-note'>Note: TDCi diesel: timing belt, DPF, injectors. Budget £400–800 for servicing.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="1943" data-price="1400" data-pmot="0.8600" data-basket="no" data-item="v1|287215010924|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/b1kAAeSw2J9prXW6/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/b1kAAeSw2J9prXW6/s-l225.jpg" alt="seat leon fr 2.0 tdi" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#2</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">? · TS23***</span></div>
+    <a href="https://www.ebay.co.uk/itm/287215010924?_skw=seat+leon&amp;hash=item42df59446c:g:b1kAAeSw2J9prXW6" target="_blank" class="card-title">seat leon fr 2.0 tdi</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1400</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£4026</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£1943</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£2953</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£200<small style="font-weight:400"> (w/c £800)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>86%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|287215010924|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|287215010924|0","v1|287215010924|0")'><input class='vrm-input' id='vrm-inp-v1|287215010924|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|287215010924|0' onclick="toggleCart('v1|287215010924|0')">Add to cart</button>
+    <div class='repair-note'>Note: TDI: DPF common. 1.4 TSI: timing chain. FR: clutch.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="627" data-price="3000" data-pmot="0.9400" data-basket="no" data-item="v1|206143676450|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/4PYAAeSwbQhpuDKo/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/4PYAAeSwbQhpuDKo/s-l225.jpg" alt="Seat Leon 2015 Estate ecomotive 1.6 Tdi £20 Year Road Tax 60" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#3</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2015 · LE65***</span></div>
+    <a href="https://www.ebay.co.uk/itm/206143676450?_skw=seat+leon&amp;hash=item2fff1ee022:g:4PYAAeSwbQhpuDKo" target="_blank" class="card-title">Seat Leon 2015 Estate ecomotive 1.6 Tdi £20 Year Road Tax 60 MPG</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£3000</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£4290</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£627</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£3237</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£160<small style="font-weight:400"> (w/c £1626)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#22c55e;font-weight:700'>94%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|206143676450|0'>YE15ATZ</code> <small class='dim'>(plate_recognizer_cached_cached_cached, 96%)</small></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|206143676450|0' onclick="toggleCart('v1|206143676450|0')">Add to cart</button>
+    <div class='repair-note'>Note: TDI: DPF common. 1.4 TSI: timing chain. FR: clutch.</div><details class='expandable'><summary>DVSA MOT record (10 tests)</summary><div class='expand-body'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Seat Leon &nbsp;|&nbsp; Black &nbsp;|&nbsp; Diesel &nbsp;|&nbsp; First used: 2015-05-22</div><div style='display:block;font-size:0.82em'><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2025-09-20</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>145,733 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Front Inner Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Offside Front Inner Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2025-09-20</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>145,733 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Front Inner Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Offside Front Inner Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2024-10-01</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>133,791 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2023-12-20</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>127,726 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Front Tyre worn close to legal limit/worn on edge Both nearside and offside (5.2.3 (e))</li><li style='color:#92400e'>Rear Brake pad(s) wearing thin (1.1.13 (a) (ii))</li><li style='color:#92400e'>Nearside Rear Outer Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Service brake fluctuating, but not excessively All brakes (1.2.1 (e))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2023-12-20</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>127,724 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Engine MIL inoperative or indicates a malfunction (8.2.2.2 (g))</li></ul><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Front Tyre worn close to legal limit/worn on edge Both nearside and offside (5.2.3 (e))</li><li style='color:#92400e'>Rear Brake pad(s) wearing thin (1.1.13 (a) (ii))</li><li style='color:#92400e'>Nearside Rear Outer Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Service brake fluctuating, but not excessively All brakes (1.2.1 (e))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2022-12-14</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>116,849 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Rear Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Offside Rear Service brake binding but not excessively (1.2.1 (f))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2021-12-15</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>109,537 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Offside Rear Service brake binding but not excessively (1.2.1 (f))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2020-12-15</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>86,664 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Front Outer Tyre worn close to legal limit/worn on edge edge (5.2.3 (e))</li><li style='color:#92400e'>Nearside Rear Brake disc worn, but not excessively (1.1.14 (a) (i))</li><li style='color:#92400e'>Offside Rear Brake disc worn, but not excessively (1.1.14 (a) (i))</li></ul></div></div></div></div></details>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="687" data-price="1200" data-pmot="0.9100" data-basket="no" data-item="v1|377036199162|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/G4AAAeSwd6FptoGZ/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/G4AAAeSwd6FptoGZ/s-l225.jpg" alt="Volkswagen Polo 1.2 2010" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#4</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2010 · LS15***</span></div>
+    <a href="https://www.ebay.co.uk/itm/377036199162?_skw=volkswagen+polo&amp;hash=item57c91bd4fa:g:G4AAAeSwd6FptoGZ" target="_blank" class="card-title">Volkswagen Polo 1.2 2010</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1200</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2420</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£687</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1497</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£180<small style="font-weight:400"> (w/c £2100)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#22c55e;font-weight:700'>91%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|377036199162|0'>FL10WRX</code> <small class='dim'>(plate_recognizer_cached_cached_cached_cached, 75%)</small></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|377036199162|0' onclick="toggleCart('v1|377036199162|0')">Add to cart</button>
+    <div class='repair-note'>Note: 1.2 TSI: timing chain £800–1500. Coil packs. Cambelt on older 1.4.</div><details class='expandable'><summary>DVSA MOT record (12 tests)</summary><div class='expand-body'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Volkswagen Polo &nbsp;|&nbsp; White &nbsp;|&nbsp; Petrol &nbsp;|&nbsp; First used: 2010-03-19</div><div style='display:block;font-size:0.82em'><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2025-11-03</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>96,968 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2025-11-03</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>96,962 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Parking brake efficiency below requirements (1.4.2 (a) (i))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2024-11-08</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>87,517 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Front Shock absorbers has light misting of oil (5.3.2 (b))</li><li style='color:#92400e'>handbrake will require adjustment</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2023-05-10</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>76,938 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Front Tyre slightly damaged/cracking or perishing n/s and o/s (5.2.3 (d) (ii))</li><li style='color:#92400e'>Offside Front Lower Suspension arm pin or bush worn but not resulting in excessive movement (5.3.4 (a) (i))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2020-03-19</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>57,488 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Front Upper Shock absorbers light misting of oil or has limited damping effect (5.3.2 (b))</li><li style='color:#92400e'>Nearside Front Lower front bumper damaged temporary fixed</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2019-02-23</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>40,775 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2018-03-17</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>58,325 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2017-03-18</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>35,703 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div></div></div></details>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="no" data-profit="357" data-price="1100" data-pmot="0.7900" data-basket="no" data-item="v1|137092804455|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/pZ0AAeSwTVFpiviK/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/pZ0AAeSwTVFpiviK/s-l225.jpg" alt="Toyota Auris 1.6 TR 5dr Petrol Hatchback 5 Seats Manual Low " class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#5</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage'>113k mi</span><span class="card-meta">2009 · CV6***</span></div>
+    <a href="https://www.ebay.co.uk/itm/137092804455?_skw=toyota+auris&amp;hash=item1feb5e2f67:g:pZ0AAeSwTVFpiviK" target="_blank" class="card-title">Toyota Auris 1.6 TR 5dr Petrol Hatchback 5 Seats Manual Low Mileage</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1100</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2236</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-good">£357</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1067</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£440<small style="font-weight:400"> (w/c £1726)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#ef4444;font-weight:700'>79%</span> <small>est.</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <span class='dim' id='vrm-disp-v1|137092804455|0'>no VRM</span> <form class='vrm-form' onsubmit='saveVrm(event,"v1|137092804455|0","v1|137092804455|0")'><input class='vrm-input' id='vrm-inp-v1|137092804455|0' placeholder='Enter VRM' maxlength='8' autocomplete='off'><button type='submit' class='vrm-btn'>Save</button></form></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|137092804455|0' onclick="toggleCart('v1|137092804455|0')">Add to cart</button>
+    <div class='repair-note'>Note: Hybrid: check battery condition. 1.6 petrol very reliable.</div>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="84" data-price="1500" data-pmot="0.8200" data-basket="no" data-item="v1|317998224043|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/830AAeSw~zhptBY~/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/830AAeSw~zhptBY~/s-l225.jpg" alt="Honda Civic Ep2 1.6 Sport" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#6</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">? · GU47***</span></div>
+    <a href="https://www.ebay.co.uk/itm/317998224043?_skw=honda+civic&amp;hash=item4a0a2bd2ab:g:830AAeSw~zhptBY~" target="_blank" class="card-title">Honda Civic Ep2 1.6 Sport</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1500</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2352</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£84</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1194</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£420<small style="font-weight:400"> (w/c £1600)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>82%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|317998224043|0'>FL12RSX</code> <small class='dim'>(plate_recognizer+dvla_validated_cached_cached_cached_cached, 82%)</small></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|317998224043|0' onclick="toggleCart('v1|317998224043|0')">Add to cart</button>
+    <div class='repair-note'>Note: i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div><details class='expandable'><summary>DVSA MOT record (13 tests)</summary><div class='expand-body'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Ford Focus &nbsp;|&nbsp; Black &nbsp;|&nbsp; Diesel &nbsp;|&nbsp; First used: 2012-03-06</div><div style='display:block;font-size:0.82em'><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2025-11-06</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>118,739 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2024-11-12</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>116,669 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Rear Sub-frame corroded but not seriously weakened (5.3.3 (b) (i))</li><li style='color:#92400e'>Rear Lower Suspension corroded</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2023-11-29</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>114,219 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>high level stop lamp not working</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2022-11-22</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>108,223 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Front number plate poor</li><li style='color:#92400e'>Centre stop light not working</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2022-11-22</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>108,223 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Front Brake disc in such a condition that it is seriously weakened (1.1.14 (a) (ii))</li></ul><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Front number plate poor</li><li style='color:#92400e'>Centre stop light not working</li><li style='color:#92400e'>Front brake pads worn low</li><li style='color:#92400e'>Both front tyres worn low and heavily worn on inner edges close to exposing cords advise replacment</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2021-11-24</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>103,193 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Centre brake light not working</li><li style='color:#92400e'>Front number plate poor</li><li style='color:#92400e'>Front brake discs heavily corroded and worn advise replacment</li><li style='color:#92400e'>Movement in both front lower arm rear bushes</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2021-11-24</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>103,191 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Nearside Windscreen wiper does not clear the windscreen effectively  (3.4 (b) (ii))</li><li style='color:#991b1b'>Offside Windscreen wiper does not clear the windscreen effectively  (3.4 (b) (ii))</li></ul><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Centre brake light not working</li><li style='color:#92400e'>Front number plate poor</li><li style='color:#92400e'>Front brake discs heavily corroded and worn advise replacment</li><li style='color:#92400e'>Movement in both front lower arm rear bushes</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2020-11-25</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>97,994 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Offside Rear Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Central stop lamp not working</li></ul></div></div></div></div></details>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="76" data-price="1100" data-pmot="0.9100" data-basket="no" data-item="v1|406770327862|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/ytIAAeSwXVxptvPk/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/ytIAAeSwXVxptvPk/s-l225.jpg" alt="Ford Focus 2010 Zetec Black Ulez Compliant 60mpg Full Years " class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#7</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2010 · IP25***</span></div>
+    <a href="https://www.ebay.co.uk/itm/406770327862?_skw=ford+focus&amp;hash=item5eb566a136:g:ytIAAeSwXVxptvPk" target="_blank" class="card-title">Ford Focus 2010 Zetec Black Ulez Compliant 60mpg Full Years Mot No Fault</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1100</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1843</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£76</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£786</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£360<small style="font-weight:400"> (w/c £1926)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#22c55e;font-weight:700'>91%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|406770327862|0'>GF10OUJ</code> <small class='dim'>(plate_recognizer_cached_cached_cached_cached, 75%)</small></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|406770327862|0' onclick="toggleCart('v1|406770327862|0')">Add to cart</button>
+    <div class='repair-note'>Note: Duratec/Ti-VCT petrol: reliable. Clutch at 80k+ £350. Minor rust on pre-2012.</div><details class='expandable'><summary>DVSA MOT record (18 tests)</summary><div class='expand-body'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Ford Focus &nbsp;|&nbsp; Black &nbsp;|&nbsp; Petrol &nbsp;|&nbsp; First used: 2010-04-20</div><div style='display:block;font-size:0.82em'><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2026-03-11</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>106,480 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Front Suspension arm pin or bush worn but not resulting in excessive movement both o/s and n/s (5.3.4 (a) (i))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2023-10-04</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>105,965 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2023-10-03</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>105,965 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Nearside Side repeater missing taped over (4.4.1 (a) (ii))</li><li style='color:#991b1b'>Offside Front Position lamp not working (4.2.1 (a) (ii))</li><li style='color:#991b1b'>Offside Front Tyre tread depth below requirements of 1.6mm (5.2.3 (e))</li></ul><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Offside Rear Tyre worn close to legal limit/worn on edge 2mm (5.2.3 (e))</li><li style='color:#92400e'>Offside Rear Tyre slightly damaged/cracking or perishing Heavy Splitting to tread area, Poor condition (5.2.3 (d) (ii))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2022-08-25</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>103,129 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Nearside Rear Inner Tyre worn close to legal limit/worn on edge out of shape, flat spot&#x27;s (5.2.3 (e))</li><li style='color:#92400e'>Offside Rear Tyre worn close to legal limit/worn on edge 3mm (5.2.3 (e))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2022-08-25</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>103,129 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Offside Headlamp not working on dipped beam (4.1.1 (a) (ii))</li></ul><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Offside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge (5.2.3 (e))</li><li style='color:#92400e'>Nearside Rear Inner Tyre worn close to legal limit/worn on edge out of shape, flat spot&#x27;s (5.2.3 (e))</li><li style='color:#92400e'>Offside Rear Tyre worn close to legal limit/worn on edge 3mm (5.2.3 (e))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2021-08-26</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>99,827 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Offside Front cracking splitting to tyre tread area,</li><li style='color:#92400e'>Nearside Front cracking splitting to tyre tread area,</li><li style='color:#92400e'>Offside Rear cracking splitting to tyre tread area,</li><li style='color:#92400e'>Nearside Rear Inner tyre out of shape flat spot&#x27;s</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2021-08-19</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>99,786 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Offside Front Lower Coil spring fractured or broken (5.3.1 (b) (i))</li><li style='color:#991b1b'>Bonnet primary retaining device ineffective only work&#x27;s on secondary catch. (3.1 (c))</li></ul><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Offside Front cracking splitting to tyre tread area,</li><li style='color:#92400e'>Nearside Front cracking splitting to tyre tread area,</li><li style='color:#92400e'>Offside Rear cracking splitting to tyre tread area,</li><li style='color:#92400e'>Nearside Rear Inner tyre out of shape flat spot&#x27;s</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2020-08-14</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>95,337 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>slight oil leak around get box area</li><li style='color:#92400e'>Nearside Front Tyre slightly damaged/cracking or perishing tread area cracking (5.2.3 (d) (ii))</li><li style='color:#92400e'>Offside Front Tyre slightly damaged/cracking or perishing tread area cracking (5.2.3 (d) (ii))</li><li style='color:#92400e'>Offside Rear Tyre slightly damaged/cracking or perishing tread area cracking (5.2.3 (d) (ii))</li></ul></div></div></div></div></details>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="no" data-vrm="yes" data-profit="56" data-price="3000" data-pmot="0.8200" data-basket="no" data-item="v1|358343354765|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/~10AAeSwCxZpqH4B/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/~10AAeSwCxZpqH4B/s-l225.jpg" alt="Honda Civic Shuttle 4wd 1.5 Petrol 1986 Restoration Project " class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#8</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-fail'>✗ ULEZ fail</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">1986 · B44***</span></div>
+    <a href="https://www.ebay.co.uk/itm/358343354765?_skw=honda+civic&amp;hash=item536eeda98d:g:~10AAeSwCxZpqH4B" target="_blank" class="card-title">Honda Civic Shuttle 4wd 1.5 Petrol 1986 Restoration Project classic Car</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£3000</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£4050</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-mid">£56</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£2666</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£510<small style="font-weight:400"> (w/c £2200)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>82%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|358343354765|0'>C719LGP</code> <small class='dim'>(plate_recognizer_cached_cached_cached, 94%)</small></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|358343354765|0' onclick="toggleCart('v1|358343354765|0')">Add to cart</button>
+    <div class='repair-note'>Note: i-CTDI diesel: injector issues £600+. EGR £300. 1.8 petrol very solid.</div><details class='expandable'><summary>DVSA MOT record (6 tests)</summary><div class='expand-body'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Honda Civic Shuttle &nbsp;|&nbsp; Silver &nbsp;|&nbsp; Petrol &nbsp;|&nbsp; First used: 1986-07-09</div><div style='display:block;font-size:0.82em'><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2010-11-08</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>114,769 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2010-09-23</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>114,769 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Offside Rear Seat belt anchorage prescribed area is excessively corroded (5.2.6)</li><li style='color:#991b1b'>Offside Rear Seat belt anchorage prescribed area is excessively corroded (5.2.6)</li><li style='color:#991b1b'>Exhaust has a major leak of exhaust gases (7.1.2)</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2009-07-10</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>112,044 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Rear Suspension component mounting prescribed area is corroded but not considered excessive (2.4.A.3)</li><li style='color:#92400e'>Exhaust has a minor leak of exhaust gases (7.1.2)</li><li style='color:#92400e'>Exhaust has part of the system slightly deteriorated (7.1.1a)</li><li style='color:#92400e'>Nearside Front brake disc slightly pitted (3.5.1h)</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2009-06-26</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>112,044 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Nearside Windscreen wiper does not clear the windscreen effectively (8.2.2)</li><li style='color:#991b1b'>Offside Windscreen wiper does not clear the windscreen effectively (8.2.2)</li><li style='color:#991b1b'>Rear registration plate deteriorated (6.3.1d)</li></ul><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Rear Suspension component mounting prescribed area is corroded but not considered excessive (2.4.A.3)</li><li style='color:#92400e'>Exhaust has a minor leak of exhaust gases (7.1.2)</li><li style='color:#92400e'>Exhaust has part of the system slightly deteriorated (7.1.1a)</li><li style='color:#92400e'>Nearside Front brake disc slightly pitted (3.5.1h)</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2006-08-29</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>104,153 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2006-08-14</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>104,148 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Nearside Registration plate lamp not working (1.1.5c)</li><li style='color:#991b1b'>Offside Registration plate lamp not working (1.1.5c)</li><li style='color:#991b1b'>Front Windscreen wiper not operating automatically when switched on (8.2.1b)</li></ul></div></div></div></div></details>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="unknown" data-vrm="yes" data-profit="-126" data-price="2000" data-pmot="0.8500" data-basket="no" data-item="v1|389742304512|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/SfgAAeSwPvlptEcr/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/SfgAAeSwPvlptEcr/s-l225.jpg" alt="2006 ford focus st" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#9</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2006 · BN23***</span></div>
+    <a href="https://www.ebay.co.uk/itm/389742304512?_skw=ford+focus&amp;hash=item5abe739d00:g:SfgAAeSwPvlptEcr" target="_blank" class="card-title">2006 ford focus st</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£2000</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£2700</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-126</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£1484</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£450<small style="font-weight:400"> (w/c £3100)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>85%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|389742304512|0'>BK06RHF</code> <small class='dim'>(plate_recognizer, 92%)</small></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|389742304512|0' onclick="toggleCart('v1|389742304512|0')">Add to cart</button>
+    <div class='repair-note'>Note: Duratec/Ti-VCT petrol: reliable. Clutch at 80k+ £350. Minor rust on pre-2012.</div><details class='expandable'><summary>DVSA MOT record (19 tests)</summary><div class='expand-body'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Ford Focus &nbsp;|&nbsp; Blue &nbsp;|&nbsp; Petrol &nbsp;|&nbsp; First used: 2006-03-31</div><div style='display:block;font-size:0.82em'><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2025-08-09</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>123,105 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2024-08-08</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>114,567 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2023-08-05</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>103,610 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2022-08-10</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>95,277 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Front Brake disc worn, pitted or scored, but not seriously weakened BOTHSIDE (1.1.14 (a) (ii))</li><li style='color:#92400e'>Rear Suspension component corroded but not seriously weakened (5.3.3 (b) (i))</li><li style='color:#92400e'>Rear Coil spring corroded  BOTHSIDE (5.3.1 (b) (i))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2021-07-16</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>82,778 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2021-07-15</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>82,777 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Nearside Front Tyre has ply or cords exposed (5.2.3 (d) (ii))</li><li style='color:#991b1b'>Offside Front Tyre has ply or cords exposed (5.2.3 (d) (ii))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2020-07-21</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>71,206 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0fdf4;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2019-07-20</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>68,680 MI</span></div><div style='font-size:0.8em;line-height:1.45'><span style='color:#64748b'>No advisories or failures noted.</span></div></div></div></div></details>
+  </div>
+</div>
+<div class="card compact" data-decision="AVOID" data-platform="ebay" data-ulez="yes" data-vrm="yes" data-profit="-115" data-price="1100" data-pmot="0.8200" data-basket="no" data-item="v1|177945562044|0" style="border-left:4px solid #ef4444">
+  <div class="thumb-wrap"><a href="https://i.ebayimg.com/images/g/18cAAeSwPMFpiZdK/s-l225.jpg" target="_blank" tabindex="-1"><img src="https://i.ebayimg.com/images/g/18cAAeSwPMFpiZdK/s-l225.jpg" alt="Ford Focus Zetec 2 Litre Petrol ( 2008 )" class="thumb" loading="lazy" onerror="this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>📷</div>'"></a></div>
+  
+  <div class="card-body">
+    <div class="card-top"><span class="rank">#10</span> <span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.82em">AVOID</span> <span style='background:var(--surface2);color:var(--dim);padding:3px 8px;border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>Ebay</span> <span class='tag-ulez-ok'>✓ ULEZ</span><span class='tag-mileage is-missing'>mileage n/a</span><span class="card-meta">2008 · BN18***</span></div>
+    <a href="https://www.ebay.co.uk/itm/177945562044?_skw=ford+focus&amp;hash=item296e61cbbc:g:18cAAeSwPMFpiZdK" target="_blank" class="card-title">Ford Focus Zetec 2 Litre Petrol ( 2008 )</a>
+    <div class="num-row">
+      <div class="num"><span class="nv">£1100</span><span class="nl">Buy</span></div>
+      <div class="num"><span class="nv">£1940</span><span class="nl">Resale</span></div>
+      <div class="num"><span class="nv profit-bad">£-115</span><span class="nl">Profit</span></div>
+      <div class="num"><span class="nv">£595</span><span class="nl">Max bid</span></div>
+      <div class="num"><span class="nv">£640<small style="font-weight:400"> (w/c £2100)</small></span><span class="nl">Repair estimate</span></div>
+      <div class="num"><span class="nv"><span style='color:#f59e0b;font-weight:700'>82%</span> <small>✓ DVSA</small></span><span class="nl">p_MOT</span></div>
+    </div>
+    <div class="vrm-row">VRM: <code class='vrm-code' id='vrm-disp-v1|177945562044|0'>WG08PNE</code> <small class='dim'>(plate_recognizer_cached_cached_cached_cached, 93%)</small></div>
+    <button class='cart-btn' type='button' id='cart-btn-v1|177945562044|0' onclick="toggleCart('v1|177945562044|0')">Add to cart</button>
+    <div class='repair-note'>Note: Duratec/Ti-VCT petrol: reliable. Clutch at 80k+ £350. Minor rust on pre-2012.</div><details class='expandable'><summary>DVSA MOT record (22 tests)</summary><div class='expand-body'><div style='font-size:0.82em;color:#64748b;margin-bottom:6px'>Ford Focus &nbsp;|&nbsp; Grey &nbsp;|&nbsp; Petrol &nbsp;|&nbsp; First used: 2008-07-09</div><div style='display:block;font-size:0.82em'><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2025-12-02</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>136,884 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Rear Anti-roll bar linkage ball joint has slight play (5.3.4 (a) (i))</li><li style='color:#92400e'>Offside Rear Anti-roll bar linkage ball joint has slight play (5.3.4 (a) (i))</li><li style='color:#92400e'>Offside Rear Tyre has a cut but not deep enough to reach the ply or cords (5.2.3 (d) (i))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2025-07-25</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>136,772 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Engine MIL inoperative or indicates a malfunction (8.2.1.2 (h))</li><li style='color:#991b1b'>Nearside Front Tyre tread depth below requirements of 1.6mm (5.2.3 (e))</li><li style='color:#991b1b'>Nearside Front Headlamp aim projected beam image is obviously incorrect (4.1.2 (c))</li></ul><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Offside Front Outer Tyre slightly damaged sidewall (5.2.3 (d) (ii))</li><li style='color:#92400e'>Nearside Rear Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Offside Rear Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Nearside Rear Brake pad(s) wearing thin (1.1.13 (a) (ii))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2024-07-29</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>119,301 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Rear Child Seat fitted not allowing full inspection of adult belt</li><li style='color:#92400e'>Nearside Rear Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Offside Rear Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Nearside Front Outer Tyre slightly damaged sidewall damaged (5.2.3 (d) (ii))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2024-07-29</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>119,301 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#991b1b'>Engine MIL inoperative or indicates a malfunction (8.2.1.2 (h))</li><li style='color:#991b1b'>Nearside Front Lower Suspension arm pin or bush excessively worn rear bush (5.3.4 (a) (i))</li><li style='color:#991b1b'>Offside Front Lower Suspension arm pin or bush excessively worn rear bush (5.3.4 (a) (i))</li></ul><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Rear Child Seat fitted not allowing full inspection of adult belt</li><li style='color:#92400e'>Nearside Rear Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Offside Rear Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Nearside Front Outer Tyre slightly damaged sidewall damaged (5.2.3 (d) (ii))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2023-07-27</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>100,391 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Rear Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Offside Rear Brake disc worn, pitted or scored, but not seriously weakened (1.1.14 (a) (ii))</li><li style='color:#92400e'>Nearside Rear Child Seat fitted not allowing full inspection of adult belt</li><li style='color:#92400e'>Nearside Front Lower Suspension arm pin or bush worn but not resulting in excessive movement rear bush (5.3.4 (a) (i))</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2022-07-14</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>83,286 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Rear Child Seat fitted not allowing full inspection of adult belt</li><li style='color:#92400e'>Nearside Front Lower Suspension arm pin or bush worn but not resulting in excessive movement rear bush (5.3.4 (a) (i))</li><li style='color:#92400e'>all tyres are perishing in tread but not excessive</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fee2e2;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2022-07-14</strong><span style='color:#991b1b;font-weight:700;font-size:0.83em'>Failed</span><span style='color:#334155'>83,286 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Rear Child Seat fitted not allowing full inspection of adult belt</li><li style='color:#92400e'>Nearside Front Lower Suspension arm pin or bush worn but not resulting in excessive movement rear bush (5.3.4 (a) (i))</li><li style='color:#92400e'>all tyres are perishing in tread but not excessive</li></ul></div></div><div style='padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#fefce8;margin-bottom:8px'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.82em;margin-bottom:4px'><strong>2021-07-14</strong><span style='color:#166534;font-weight:700;font-size:0.83em'>Passed</span><span style='color:#334155'>66,489 MI</span></div><div style='font-size:0.8em;line-height:1.45'><ul style='margin:6px 0 0 16px;padding:0;font-size:0.8em'><li style='color:#92400e'>Nearside Rear Child Seat fitted not allowing full inspection of adult belt</li><li style='color:#92400e'>Nearside Rear Brake pad(s) wearing thin (1.1.13 (a) (ii))</li><li style='color:#92400e'>Offside Rear Brake pad(s) wearing thin (1.1.13 (a) (ii))</li><li style='color:#92400e'>Nearside Front Tyre worn close to legal limit/worn on edge wearing across the tread+perished (5.2.3 (e))</li></ul></div></div></div></div></details>
+  </div>
+</div></div></details>
+  <div class="footer">
+    Dealerly 0.9.9 — SWAutos &nbsp;|&nbsp;
+    Estimates only. Always verify before bidding.
+  </div>
+  </div>
+  <script>
+/* Dark mode — applied before paint via inline script in <head> */
+function toggleDark() {
+  const cur  = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('dealerly_theme', next);
+  const btn = document.getElementById('dark-btn');
+  if (btn) btn.textContent = next === 'dark' ? '\u2600 Light' : '\u263e Dark';
+}
+
+function toggleDensity() {
+  const body = document.body;
+  if (!body) return;
+  const cur = body.getAttribute('data-density') || 'comfortable';
+  const next = cur === 'dense' ? 'comfortable' : 'dense';
+  body.setAttribute('data-density', next);
+  localStorage.setItem('dealerly_density', next);
+  const btn = document.getElementById('density-btn');
+  if (btn) btn.textContent = next === 'dense' ? 'Comfortable View' : 'Dense View';
+}
+
+/* Manual VRM — restore saved values from localStorage on load.
+   Uses data-item querySelectorAll so BOTH the top-3 strip instance and the
+   main grid instance of the same listing are updated together. */
+function _applyVrm(itemId, val) {
+  document.querySelectorAll(`.card[data-item="${itemId}"]`).forEach(card => {
+    const disp = card.querySelector('[id^="vrm-disp-"]');
+    const form = card.querySelector('.vrm-form');
+    if (disp) { disp.textContent = val; disp.className = 'vrm-saved'; }
+    if (form) form.style.display = 'none';
+  });
+}
+
+(function () {
+  const seen = new Set();
+  document.querySelectorAll('.card[data-item]').forEach(card => {
+    const id = card.dataset.item;
+    if (seen.has(id)) return;
+    seen.add(id);
+    const val = localStorage.getItem('vrm_' + id);
+    if (val) _applyVrm(id, val);
+  });
+})();
+
+function saveVrm(ev, itemId, iid) {
+  ev.preventDefault();
+  const inp = document.getElementById('vrm-inp-' + iid);
+  const val = inp.value.trim().toUpperCase().replace(/\s/g, '');
+  if (!val) return;
+  localStorage.setItem('vrm_' + itemId, val);
+  _applyVrm(itemId, val);
+}
+
+const CART_KEY = 'dealerly_cart_v1';
+function _loadCart() {
+  try {
+    const raw = localStorage.getItem(CART_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? new Set(arr) : new Set();
+  } catch (_) {
+    return new Set();
+  }
+}
+function _saveCart(setObj) {
+  localStorage.setItem(CART_KEY, JSON.stringify(Array.from(setObj)));
+}
+function _renderCartButtons() {
+  const cart = _loadCart();
+  document.querySelectorAll('.card[data-item]').forEach(card => {
+    const id = card.dataset.item;
+    const btn = card.querySelector('.cart-btn');
+    if (!btn) return;
+    const inCart = cart.has(id);
+    btn.classList.toggle('in-cart', inCart);
+    btn.textContent = inCart ? 'Remove from cart' : 'Add to cart';
+  });
+}
+function _renderCartSummary() {
+  const cart = _loadCart();
+  let spend = 0, profit = 0;
+  document.querySelectorAll('.card[data-item]').forEach(card => {
+    if (!cart.has(card.dataset.item)) return;
+    spend += parseFloat(card.dataset.price || '0') || 0;
+    profit += parseFloat(card.dataset.profit || '0') || 0;
+  });
+  const el = document.getElementById('cart-summary');
+  if (!el) return;
+  const budget = parseFloat(el.dataset.budget || '0') || 0;
+  const left = Math.max(0, budget - spend);
+  el.textContent = `Cart ${cart.size} · £${Math.round(spend)} spend · £${Math.round(left)} left · ~£${Math.round(profit)} profit`;
+}
+function toggleCart(itemId) {
+  const cart = _loadCart();
+  if (cart.has(itemId)) cart.delete(itemId); else cart.add(itemId);
+  _saveCart(cart);
+  _renderCartButtons();
+  _renderCartSummary();
+}
+
+/* Filter + sort state */
+const state = {
+  dec: 'ALL', plat: 'ALL', ulez: 'ALL', vrm: 'ALL',
+  profMin: -99999, profMax: 99999, sort: 'profit_desc'
+};
+
+function applyFilters() {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  const cards = Array.from(grid.querySelectorAll('.card'));
+
+  cards.forEach(c => {
+    const show =
+      (state.dec  === 'ALL' || c.dataset.decision === state.dec)  &&
+      (state.plat === 'ALL' || c.dataset.platform === state.plat) &&
+      (state.ulez === 'ALL' || c.dataset.ulez     === state.ulez) &&
+      (state.vrm  === 'ALL' || c.dataset.vrm      === state.vrm)  &&
+      parseFloat(c.dataset.profit) >= state.profMin &&
+      parseFloat(c.dataset.profit) <= state.profMax;
+    c.classList.toggle('hidden', !show);
+  });
+
+  const visible = cards.filter(c => !c.classList.contains('hidden'));
+  visible.sort((a, b) => {
+    switch (state.sort) {
+      case 'profit_desc': return parseFloat(b.dataset.profit) - parseFloat(a.dataset.profit);
+      case 'profit_asc':  return parseFloat(a.dataset.profit) - parseFloat(b.dataset.profit);
+      case 'price_asc':   return parseFloat(a.dataset.price)  - parseFloat(b.dataset.price);
+      case 'price_desc':  return parseFloat(b.dataset.price)  - parseFloat(a.dataset.price);
+      case 'pmot_desc':   return parseFloat(b.dataset.pmot)   - parseFloat(a.dataset.pmot);
+    }
+    return 0;
+  });
+  visible.forEach(c => grid.appendChild(c));
+
+  const cnt = document.getElementById('result-count');
+  if (cnt) cnt.textContent = visible.length + ' listing' + (visible.length !== 1 ? 's' : '');
+  _renderCartButtons();
+  _renderCartSummary();
+}
+
+function setFilter(key, val, el) {
+  state[key] = val;
+  if (el) {
+    const grp = el.closest('.filter-group');
+    if (grp) grp.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+  applyFilters();
+}
+
+function setProfitRange() {
+  const lo = document.getElementById('prof-min');
+  const hi = document.getElementById('prof-max');
+  state.profMin = (lo && lo.value !== '') ? parseFloat(lo.value) : -99999;
+  state.profMax = (hi && hi.value !== '') ? parseFloat(hi.value) :  99999;
+  applyFilters();
+}
+
+function setSort(sel) {
+  state.sort = sel.value;
+  applyFilters();
+}
+</script>
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      const density = localStorage.getItem('dealerly_density') || 'comfortable';
+      document.body.setAttribute('data-density', density);
+      const densBtn = document.getElementById('density-btn');
+      if (densBtn) densBtn.textContent = density === 'dense' ? 'Comfortable View' : 'Dense View';
+      _renderCartButtons();
+      _renderCartSummary();
+      applyFilters();
+      const theme = document.documentElement.getAttribute('data-theme');
+      const btn = document.getElementById('dark-btn');
+      if (btn) btn.textContent = theme === 'dark' ? '☀ Light' : '☾ Dark';
+    });
+  </script>
+</body>
+</html>
