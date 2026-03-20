@@ -33,6 +33,7 @@
 
 ## GitHub / Claude Code
 - Source of truth: remote repo (e.g. `PresleySW/Dealerly-V1.0`). Clone → open folder in editor; AI uses **local clone**, not the website.
+- **Git hygiene:** `dealerly/__pycache__/` removed from version control (2026-03-20); keep it untracked. **Obsidian:** vault path configurable via `DEALERLY_OBSIDIAN_VAULT`; entry doc `Dealerly_Vault/_Dealerly_Brain.md` (local only).
 - Do **not** commit `dealerly/.env` (gitignored). Restore secrets locally after clone; rotate leaked keys.
 - Master handoff prompt: `prompts/MASTER_PROMPT_OPUS.md`.
 
