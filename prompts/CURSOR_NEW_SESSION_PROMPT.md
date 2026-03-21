@@ -5,7 +5,10 @@ You are continuing development on Dealerly.
 - Core package: `D:/RHUL/Dealerly/Dealerly 0.9/dealerly/`
 - Reports: `D:/RHUL/Dealerly/Dealerly 0.9/reports/`
 - Runtime logs: `D:/RHUL/Dealerly/Dealerly 0.9/prompts/PIPELINE_REPORT.md`, `D:/RHUL/Dealerly/Dealerly 0.9/prompts/NEXT_VERSION.md`
-- Obsidian vault: `D:/RHUL/Dealerly/Dealerly_Vault/`
+- Obsidian vault: `D:/RHUL/Dealerly/Dealerly_Vault/` — start at **`_Dealerly_Brain.md`** for env, ANPR tuning, local AI, Claude desktop vs Dealerly.
+
+## Cursor tools (use when connected)
+**Figma** · **Slack** · **GitLab** — available in Cursor when MCP/apps are enabled: design alignment, team comms (no `.env`), GitLab issues & pipelines. See `.cursorrules` → *Cursor — relevant tools*.
 
 ## Source-of-Truth Order
 1. `CLAUDE.md`
@@ -15,6 +18,7 @@ Then read:
 - `.cursorrules`
 - `.cursor/skills/dealerly-intel.md`
 - `prompts/RELEVANT.md`
+- `prompts/TROUBLESHOOTING.md` (Claude blank window, offer AI, ANPR, vault)
 
 ## Mandatory Constraints
 - Surgical diffs only.

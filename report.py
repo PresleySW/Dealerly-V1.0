@@ -1,0 +1,2418 @@
+"""
+dealerly/report.py — v0.10.0
+
+Sprint 2 full rewrite:
+  - Card-based layout replacing table rows
+  - Car thumbnail per card (first_image_url from Listing)
+  - Filter bar: decision, platform, ULEZ, VRM-verified, profit range
+  - Sort: profit desc/asc, price asc/desc, p_MOT desc
+  - Top-3 comparison strip at page top (BUY/OFFER only)
+  - Dark mode toggle (CSS custom properties, localStorage + prefers-color-scheme)
+  - Manual VRM entry on unverified cards (localStorage, no backend)
+  - Near-miss as compact cards; AVOID in collapsible section
+  - UK 3D stats board: buyer postcode, search radius, new vs repeat price observations
+    (Three.js + OrbitControls from CDN — needs network when viewing)
+  - Standalone ``UK_STATS_MAP_HTML`` page (same content as embedded section)
+
+Data extraction helpers (print_report, append_deal_log) preserved from v0.9.6.
+
+Optional branding: place PNGs in ``../Logos`` (see ``Logos/README.md``) — embedded as data URIs.
+"""
+from __future__ import annotations
+
+import base64
+import html as html_lib
+import json
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+from dealerly.config import DEAL_LOG_PATH, LOGOS_DIR, REPORTS_DIR, UK_STATS_MAP_HTML, VERSION
+from dealerly.models import DealInput, DealOutput, Listing
+from dealerly.mot_formatter import format_mot_history_html
+from dealerly.utils import console_safe, now_utc_iso, round_to_nearest
+from dealerly.vrm import is_vrm_displayable, resolve_vrm_for_report
+
+_REPORT_DIR = Path(__file__).resolve().parent
+
+
+def _embed_uk_outline_json() -> str:
+    """Natural Earth–derived GB + NI rings (GeoJSON lon/lat); shipped as ``uk_gbr_outline.json``."""
+    p = _REPORT_DIR / "uk_gbr_outline.json"
+    try:
+        return p.read_text(encoding="utf-8")
+    except OSError:
+        return '{"rings":[]}'
+
+
+_DECISION_COLOURS = {
+    "BUY":   "#22c55e",
+    "OFFER": "#f59e0b",
+    "PASS":  "#94a3b8",
+    "AVOID": "#ef4444",
+}
+
+# ---------------------------------------------------------------------------
+# Logos (Dealerly 1.0/Logos/*) — embedded as data URIs so reports stay portable
+# ---------------------------------------------------------------------------
+# Resolution order per platform: (1) explicit filenames, case-insensitive match on disk;
+# (2) narrow glob fallbacks. Ship logos may use Seeklogo/long names — list those first.
+_LOGO_PATH_URI_CACHE: Dict[str, str] = {}
+
+_PLATFORM_LOGO_FILENAMES: dict[str, tuple[str, ...]] = {
+    "ebay": (
+        "ebay-logo-png_seeklogo-269395.png",
+        "ebay.png",
+        "Ebay.png",
+        "eBay.png",
+        "ebay_logo.png",
+        "ebay-seeklogo.png",
+    ),
+    "facebook": (
+        "facebook-marketplace-logo.png",
+        "fb-marketplace.png",
+        "FB-Marketplace.png",
+        "marketplace-logo.png",
+        "marketplace.png",
+        "Marketplace.png",
+        "facebook.png",
+        "Facebook.png",
+    ),
+    "motors": (
+        "Motors-1.png",
+        "motors-1.png",
+        "motors.png",
+        "Motors.png",
+        "motors_co_uk.png",
+    ),
+}
+
+# Only used if no explicit filename matched — keeps renames from breaking when unique
+_PLATFORM_LOGO_GLOBS: dict[str, tuple[str, ...]] = {
+    "ebay": ("ebay*.png",),
+    "facebook": ("*marketplace*.png", "*facebook*marketplace*.png"),
+    "motors": ("motors*.png", "Motors*.png"),
+}
+
+_FOOTER_LOGO_CANDIDATES: tuple[str, ...] = (
+    "cazoo.png",
+    "Cazoo.png",
+    "CAZOO.png",
+)
+
+_IMG_EXT_OK = frozenset({".png", ".webp", ".jpg", ".jpeg"})
+
+
+def _logos_index() -> dict[str, Path]:
+    """Basename (lowercase) -> path for all files in LOGOS_DIR."""
+    if not LOGOS_DIR.is_dir():
+        return {}
+    return {f.name.lower(): f for f in LOGOS_DIR.iterdir() if f.is_file()}
+
+
+def _resolve_logo_path(candidates: tuple[str, ...]) -> Optional[Path]:
+    """First candidate that exists on disk (case-insensitive basename)."""
+    idx = _logos_index()
+    for c in candidates:
+        key = c.lower()
+        if key in idx:
+            return idx[key]
+    return None
+
+
+def _data_uri_for_path(path: Path) -> str:
+    key = str(path.resolve())
+    if key in _LOGO_PATH_URI_CACHE:
+        return _LOGO_PATH_URI_CACHE[key]
+    suf = path.suffix.lower()
+    mime = (
+        "image/png"
+        if suf == ".png"
+        else "image/jpeg"
+        if suf in (".jpg", ".jpeg")
+        else "image/webp"
+        if suf == ".webp"
+        else "image/png"
+    )
+    b64 = base64.b64encode(path.read_bytes()).decode("ascii")
+    uri = f"data:{mime};base64,{b64}"
+    _LOGO_PATH_URI_CACHE[key] = uri
+    return uri
+
+
+def _data_uri_for_logo_file(filename: str) -> Optional[str]:
+    """Single-file lookup (footer / tests). Returns None if missing."""
+    path = _resolve_logo_path((filename,))
+    if path is None:
+        return None
+    return _data_uri_for_path(path)
+
+
+def _facebook_marketplace_logo_newest() -> Optional[Path]:
+    """
+    When several Marketplace PNGs exist (e.g. after a logo refresh), use the
+    most recently modified file so a new drop/replace wins over stale names.
+    """
+    if not LOGOS_DIR.is_dir():
+        return None
+    found: List[Path] = []
+    for pattern in _PLATFORM_LOGO_GLOBS.get("facebook", ()):
+        found.extend(f for f in LOGOS_DIR.glob(pattern) if f.is_file())
+    if not found:
+        return None
+    uniq: dict[str, Path] = {}
+    for f in found:
+        uniq[str(f.resolve())] = f
+    ranked = sorted(uniq.values(), key=lambda x: x.stat().st_mtime, reverse=True)
+    return ranked[0]
+
+
+def _platform_logo_data_uri(platform: str) -> Optional[str]:
+    p = (platform or "").strip().lower()
+    path = _resolve_logo_path(_PLATFORM_LOGO_FILENAMES.get(p, ()))
+    if p == "facebook" and LOGOS_DIR.is_dir():
+        cand = _facebook_marketplace_logo_newest()
+        if cand is not None:
+            if path is None or cand.stat().st_mtime > path.stat().st_mtime:
+                path = cand
+    elif path is None and LOGOS_DIR.is_dir():
+        for pattern in _PLATFORM_LOGO_GLOBS.get(p, ()):
+            matches = sorted(LOGOS_DIR.glob(pattern))
+            for m in matches:
+                if m.is_file():
+                    path = m
+                    break
+            if path is not None:
+                break
+    if path is None:
+        return None
+    return _data_uri_for_path(path)
+
+
+def _find_cazoo_logo_path() -> Optional[Path]:
+    """Footer Cazoo mark: explicit names, then any *cazoo* image (png/webp/jpg)."""
+    path = _resolve_logo_path(_FOOTER_LOGO_CANDIDATES)
+    if path is not None:
+        return path
+    if not LOGOS_DIR.is_dir():
+        return None
+    for m in sorted(LOGOS_DIR.glob("*cazoo*")):
+        if m.is_file() and m.suffix.lower() in _IMG_EXT_OK:
+            return m
+    return None
+
+
+def _footer_logos_html() -> str:
+    """Optional partner marks not tied to listing.platform (e.g. Cazoo)."""
+    path = _find_cazoo_logo_path()
+    if path is None:
+        return ""
+    uri = _data_uri_for_path(path)
+    return (
+        '<span class="footer-logos" aria-hidden="true">'
+        '<span class="footer-logo" title="Cazoo">'
+        f'<img src="{uri}" alt="" loading="lazy" />'
+        "</span></span>"
+    )
+
+
+# Discreet Marketplace (FB) badge — SVG fallback when no marketplace.png in Logos/
+_MARKETPLACE_ICON_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
+    'stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" '
+    'aria-hidden="true" width="40" height="40">'
+    '<path d="M6 8V6a4 4 0 0 1 4-4h0a4 4 0 0 1 4 4v2"/><path d="M4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/>'
+    '<path d="M10 14h4"/></svg>'
+)
+
+
+def _platform_source_label(p: str) -> str:
+    """Human label for Sources line (internal slug may stay ``facebook``)."""
+    return "marketplace" if (p or "").strip().lower() == "facebook" else (p or "unknown")
+
+
+def _platform_mix_label(p: str) -> str:
+    return "marketplace" if (p or "").strip().lower() == "facebook" else (p or "unknown")
+
+# Common eBay seller misspellings — case-insensitive word replacement
+_TITLE_FIXES: list[tuple[str, str]] = [
+    ("diesal", "Diesel"), ("diesle", "Diesel"), ("disel", "Diesel"),
+    ("petral", "Petrol"), ("mannual", "Manual"), ("manaul", "Manual"),
+    ("automatik", "Automatic"), ("milage", "Mileage"), ("millage", "Mileage"),
+]
+
+def _normalise_title(title: str) -> str:
+    """Fix common misspellings in seller-authored titles."""
+    import re as _re
+    out = title
+    for wrong, right in _TITLE_FIXES:
+        out = _re.sub(wrong, right, out, flags=_re.IGNORECASE)
+    return out
+
+
+def _badge(decision: str) -> str:
+    colour = _DECISION_COLOURS.get(decision, "#94a3b8")
+    return (
+        f'<span style="background:{colour};color:#fff;padding:3px 10px;'
+        f'border-radius:12px;font-weight:700;font-size:0.82em">{decision}</span>'
+    )
+
+
+def _platform_badge(platform: str) -> str:
+    p = (platform or "").strip().lower()
+    uri = _platform_logo_data_uri(p)
+    if uri:
+        title = "Marketplace" if p == "facebook" else (p.capitalize() or "Unknown")
+        return (
+            f'<span class="plat-badge plat-badge-img-wrap" title="{html_lib.escape(title)}" role="img" '
+            f'aria-label="{html_lib.escape(title)}">'
+            f'<img class="plat-badge-img" src="{uri}" alt="" loading="lazy" /></span>'
+        )
+    if p == "facebook":
+        return (
+            '<span class="plat-badge plat-badge-mp" title="Marketplace" role="img" '
+            'aria-label="Marketplace">'
+            f"{_MARKETPLACE_ICON_SVG}</span>"
+        )
+    label = html_lib.escape(p.capitalize() or "Unknown")
+    return (
+        "<span style='background:var(--surface2);color:var(--dim);padding:3px 8px;"
+        "border-radius:10px;font-weight:700;font-size:0.75em;border:1px solid var(--border)'>"
+        f"{label}</span>"
+    )
+
+
+def _platform_filter_button_html(platform: str) -> str:
+    """Filter bar: platform logos from Logos/ when present; else text / SVG for Marketplace."""
+    p = (platform or "").strip()
+    pe = html_lib.escape(p)
+    pl = p.lower()
+    uri = _platform_logo_data_uri(pl)
+    if uri:
+        t = "Marketplace" if pl == "facebook" else p.capitalize()
+        return (
+            f'<button class="fbtn plat-fbtn-mp" data-v="{pe}" '
+            f'onclick="setFilter(\'plat\',\'{pe}\',this)" '
+            f'title="{html_lib.escape(t)}" aria-label="{html_lib.escape(t)}">'
+            f'<img class="plat-filter-img" src="{uri}" alt="" loading="lazy" /></button>'
+        )
+    if pl == "facebook":
+        return (
+            f'<button class="fbtn plat-fbtn-mp" data-v="{pe}" '
+            f'onclick="setFilter(\'plat\',\'{pe}\',this)" '
+            f'title="Marketplace" aria-label="Marketplace">'
+            f"{_MARKETPLACE_ICON_SVG}</button>"
+        )
+    return (
+        f'<button class="fbtn" data-v="{pe}" '
+        f'onclick="setFilter(\'plat\',\'{pe}\',this)">'
+        f"{html_lib.escape(p).capitalize()}</button>"
+    )
+
+
+def _seen_badges_html(seen_info: dict, current_price: float) -> str:
+    """Render Sprint 9 'seen before / price trend / watchlist / traded' badges."""
+    if not seen_info:
+        return ""
+    parts: list[str] = []
+    times = seen_info.get("times_seen", 0)
+    first_price = seen_info.get("first_seen_price")
+
+    # Seen-before: ≥2 observations means it appeared in a previous run too
+    if times >= 2:
+        parts.append(f"<span class='tag-seen'>\u21bb Seen {times}\u00d7</span>")
+        if first_price and current_price:
+            delta = current_price - first_price
+            if delta <= -25:
+                parts.append(
+                    f"<span class='tag-price-drop'>\u2193 \u00a3{abs(delta):.0f}</span>"
+                )
+            elif delta >= 25:
+                parts.append(
+                    f"<span class='tag-price-rise'>\u2191 \u00a3{delta:.0f}</span>"
+                )
+
+    if seen_info.get("watchlisted"):
+        parts.append("<span class='tag-watchlisted'>\u2605 Watchlisted</span>")
+    if seen_info.get("was_traded"):
+        parts.append("<span class='tag-traded'>\u2713 Traded</span>")
+    if seen_info.get("has_lead"):
+        parts.append("<span class='tag-lead'>Lead open</span>")
+    return " ".join(parts)
+
+
+def _location_label(listing: Listing) -> str:
+    """
+    Show a useful location label; fall back to platform-safe seller labels when
+    location is missing or masked.
+    """
+    raw_loc = (listing.location or "").strip()
+    plat = (listing.platform or "").strip().lower()
+    if plat == "facebook":
+        loc_norm = raw_loc.lower()
+        title_norm = (listing.title or "").strip().lower()
+        if (
+            not raw_loc
+            or loc_norm == title_norm
+            or loc_norm in {"london", "london, united kingdom", "united kingdom"}
+        ):
+            return "Marketplace seller"
+    if raw_loc and "***" not in raw_loc:
+        return html_lib.escape(raw_loc[:40])
+    if plat == "ebay":
+        return "ebay seller"
+    if plat == "motors":
+        return "motors seller"
+    return html_lib.escape(f"{plat or 'unknown'} seller")
+
+
+def _p_mot_label(p_mot: float, mot_history: Any) -> str:
+    if p_mot >= 0.90:
+        col = "#22c55e"
+    elif p_mot >= 0.80:
+        col = "#f59e0b"
+    else:
+        col = "#ef4444"
+    src = "\u2713 DVSA" if mot_history else "est."
+    return (
+        f"<span style='color:{col};font-weight:700'>{p_mot:.0%}</span> "
+        f"<small>{src}</small>"
+    )
+
+
+def _gallery_wrap_html(first_url: str, extra_urls: str, title: str) -> str:
+    """
+    Return the full <div class="thumb-wrap"> element.
+
+    When extra_urls is non-empty, renders a lightweight JS carousel with
+    prev/next chevron buttons that appear on hover. No external dependencies.
+    """
+    import json as _json
+    extras = [u.strip() for u in (extra_urls or "").split(",") if u.strip()]
+    all_urls = ([first_url] if first_url else []) + extras
+
+    if not all_urls:
+        return '<div class="thumb-wrap"><div class="thumb-empty">\U0001F4F7</div></div>'
+
+    su = html_lib.escape(all_urls[0])
+    st = html_lib.escape(title[:60])
+    img_inner = (
+        f'<a href="{su}" target="_blank" tabindex="-1">'
+        f'<img src="{su}" alt="{st}" class="thumb" loading="lazy" '
+        f"onerror=\"this.closest('.thumb-wrap').innerHTML='<div class=thumb-empty>\U0001F4F7</div>'\">"
+        f'</a>'
+    )
+
+    if len(all_urls) < 2:
+        return f'<div class="thumb-wrap">{img_inner}</div>'
+
+    urls_json = html_lib.escape(_json.dumps(all_urls))
+    counter = f'<span class="gal-counter">1/{len(all_urls)}</span>'
+    prev_btn = (
+        '<button class="gal-btn gal-prev" onclick="galNav(this,-1)" '
+        'aria-label="Previous image">&#8249;</button>'
+    )
+    next_btn = (
+        '<button class="gal-btn gal-next" onclick="galNav(this,1)" '
+        'aria-label="Next image">&#8250;</button>'
+    )
+    return (
+        f'<div class="thumb-wrap" data-gallery="{urls_json}" data-idx="0">'
+        f'{img_inner}{prev_btn}{next_btn}{counter}'
+        f'</div>'
+    )
+
+
+def _score_breakdown_html(deal: DealInput, out: DealOutput, listing: Listing) -> str:
+    """Full scoring breakdown for the expandable detail panel (Sprint 7)."""
+
+    def _r(label: str, value: str) -> str:
+        return (
+            f"<tr>"
+            f"<td style='padding:2px 10px 2px 0;color:var(--dim);font-size:.76em;"
+            f"white-space:nowrap'>{html_lib.escape(label)}</td>"
+            f"<td style='padding:2px 0;font-size:.76em;font-weight:600'>{value}</td>"
+            f"</tr>"
+        )
+
+    rows = [
+        _r("Buy price",        f"£{deal.buy_price:.0f}"),
+    ]
+    _cm = getattr(out, "comps_median_raw", None)
+    if _cm is not None and _cm > 0:
+        rows.append(
+            _r(
+                "Comps median (raw)",
+                f"£{_cm:.0f} — from AutoTrader/eBay before discount × mileage adj",
+            )
+        )
+    rows += [
+        _r("Expected resale",  f"£{deal.expected_resale:.0f}"),
+        _r("Base repair",      f"£{deal.base_repair_estimate:.0f}"),
+        _r("Worst-case repair",f"£{deal.worst_case_repair:.0f}"),
+        _r("Fees",             f"£{deal.fees_total:.0f}"),
+        _r("Holding cost",     f"£{deal.holding_cost:.0f}"),
+        _r("Admin buffer",     f"£{deal.admin_buffer:.0f}"),
+        _r("Transport buffer", f"£{deal.transport_buffer:.0f}"),
+        _r("Target margin",    f"£{deal.target_margin:.0f}"),
+        _r("Risk buffer",      f"£{out.risk_buffer:.0f}"),
+        _r("Shock ratio",      f"{out.shock_impact_ratio:.2f}"),
+        _r("Velocity score",   f"{out.velocity_score:.2f}"),
+    ]
+    if listing.vrm_source:
+        rows.append(_r(
+            "VRM source",
+            f"{html_lib.escape(listing.vrm_source)} ({listing.vrm_confidence:.0%})",
+        ))
+    if listing.colour:
+        rows.append(_r("Colour (DVLA)", html_lib.escape(listing.colour)))
+    if listing.engine_cc:
+        rows.append(_r("Engine", f"{listing.engine_cc}cc"))
+    if listing.tax_status:
+        rows.append(_r("Tax status", html_lib.escape(listing.tax_status)))
+    if listing.tax_due_date:
+        rows.append(_r("Tax due", html_lib.escape(listing.tax_due_date)))
+    if listing.first_registered:
+        rows.append(_r("First registered", html_lib.escape(listing.first_registered)))
+    full_reason = (out.reason or "").strip()
+    if full_reason:
+        rows.append(_r("Reason (full)", html_lib.escape(full_reason[:600])))
+    notes = (out.notes or "").strip()
+    if notes:
+        rows.append(_r("Notes", html_lib.escape(notes[:300])))
+
+    table = (
+        "<table style='border-collapse:collapse;width:100%'>"
+        + "".join(rows)
+        + "</table>"
+    )
+    return (
+        "<details class='expandable'>"
+        "<summary>Scoring breakdown</summary>"
+        f"<div class='expand-body'>{table}</div>"
+        "</details>"
+    )
+
+
+def _card_html(
+    rank: int,
+    listing: Listing,
+    deal: DealInput,
+    out: DealOutput,
+    target_margin: float,
+    *,
+    featured: bool = False,
+    compact: bool = False,
+    id_suffix: str = "",
+    basket_selected: bool = False,
+    seen_info: dict | None = None,
+) -> str:
+    """Render a single listing as a card.
+
+    id_suffix: appended to all element IDs to avoid duplicates when the same
+    listing appears in both the top-3 strip and the main grid.
+    """
+    border_col = _DECISION_COLOURS.get(out.decision, "#94a3b8")
+    raw_iid = html_lib.escape(listing.item_id)
+    iid = raw_iid + id_suffix   # unique per card instance
+
+    # VRM: pipeline + title/description fallback (Motors often omits structured vrm)
+    _resolved = resolve_vrm_for_report(listing)
+    displayable = _resolved is not None or is_vrm_displayable(
+        listing.vrm, listing.vrm_confidence
+    )
+
+    # VRM / manual entry block
+    if _resolved:
+        _rv, _rsrc, _rconf = _resolved
+        vrm_html = (
+            f"<code class='vrm-code' id='vrm-disp-{iid}'>"
+            f"{html_lib.escape(_rv)}</code>"
+            f" <small class='dim'>({html_lib.escape(_rsrc)}, {_rconf:.0%})</small>"
+        )
+        if _rsrc == "title/description":
+            vrm_html += " <small class='warn'>verify on V5C</small>"
+        elif listing.vrm and not is_vrm_displayable(listing.vrm, listing.vrm_confidence):
+            vrm_html += " <small class='warn'>below usual verify threshold</small>"
+    else:
+        # Sprint 4: actionable badge for BUY/OFFER cards; dim label for PASS/AVOID.
+        _vrm_label = (
+            f"<span class='tag-no-vrm' id='vrm-disp-{iid}'>No VRM — contact seller</span>"
+            if out.decision in ("BUY", "OFFER")
+            else f"<span class='dim' id='vrm-disp-{iid}'>no VRM</span>"
+        )
+        vrm_html = (
+            f"{_vrm_label}"
+            f" <form class='vrm-form' onsubmit='saveVrm(event,\"{raw_iid}\",\"{iid}\")'>"
+            f"<input class='vrm-input' id='vrm-inp-{iid}' "
+            f"placeholder='Enter VRM' maxlength='8' autocomplete='off'>"
+            f"<button type='submit' class='vrm-btn'>Save</button>"
+            f"</form>"
+        )
+        if out.decision == "BUY":
+            vrm_html += " <small class='warn'>Verification pending</small>"
+
+    # Write-off badge (v0.9.10)
+    writeoff_badge = ""
+    if listing.writeoff_category:
+        writeoff_badge = (
+            f'<span class="tag-writeoff">'
+            f'{html_lib.escape(listing.writeoff_category)} structural risk</span>'
+        )
+    basket_badge = '<span class="tag-basket">\U0001F6D2 Basket</span>' if basket_selected else ""
+    # Sprint 15: auction badge — subtle hammer indicator
+    auction_badge = ('<span class="tag-auction" title="Timed auction — bid before it ends">'
+                     '\U0001F528 Auction</span>' if getattr(listing, "is_auction", False) else "")
+
+    # ULEZ tag + filter value
+    if listing.ulez_compliant is True:
+        ulez = "<span class='tag-ulez-ok'>\u2713 ULEZ</span>"
+        ulez_val = "yes"
+    elif listing.ulez_compliant is False:
+        ulez = "<span class='tag-ulez-fail'>\u2717 ULEZ fail</span>"
+        ulez_val = "no"
+    else:
+        ulez = ""
+        ulez_val = "unknown"
+
+    # Profit colour class
+    if out.expected_profit >= target_margin:
+        pcls = "profit-good"
+    elif out.expected_profit > 0:
+        pcls = "profit-mid"
+    else:
+        pcls = "profit-bad"
+
+    # Offer hint line — shown for BUY/OFFER and for PASS near-misses where
+    # max_bid is within 30% of listed price (achievable negotiation range).
+    offer_line = ""
+    _is_near_miss_pass = (
+        out.decision == "PASS"
+        and out.max_bid > 0
+        and out.max_bid / listing.price_gbp >= 0.70
+    )
+    if out.decision in ("OFFER", "BUY") or _is_near_miss_pass:
+        rounded = round_to_nearest(out.max_bid, 50)
+        if rounded >= listing.price_gbp:
+            offer_line = (
+                f"<div class='offer-hint ok'>Max bid exceeds asking \u2014 "
+                f"buy at \u00a3{listing.price_gbp:.0f}</div>"
+            )
+        else:
+            _hint_label = "Negotiate to" if _is_near_miss_pass else "Offer around"
+            offer_line = (
+                f"<div class='offer-hint'>{_hint_label}: "
+                f"<strong>\u00a3{rounded:,}</strong></div>"
+            )
+
+    # Short scoring rationale (helps explain MOT gates, margin, etc.)
+    reason_html = ""
+    raw_reason = (out.reason or "").strip()
+    if out.decision in ("BUY", "OFFER", "PASS") and raw_reason:
+        cap = 180
+        snippet = raw_reason if len(raw_reason) <= cap else raw_reason[: cap - 1] + "\u2026"
+        reason_html = (
+            f'<div class="decision-reason" title="{html_lib.escape(raw_reason[:800])}">'
+            f"{html_lib.escape(snippet)}</div>"
+        )
+
+    # Repair profile note
+    repair_note = ""
+    if deal.repair_profile_notes:
+        repair_note = (
+            f"<div class='repair-note'>Note: "
+            f"{html_lib.escape(deal.repair_profile_notes[:90])}</div>"
+        )
+
+    # AI offer message (omit on compact cards)
+    offer_msg_html = ""
+    if listing.offer_message and out.decision in ("BUY", "OFFER") and not compact:
+        uid = f"msg_{listing.item_id[:10]}"
+        safe_msg = html_lib.escape(listing.offer_message).replace("\n", "<br>")
+        offer_msg_html = (
+            f"<details class='expandable'>"
+            f"<summary>AI negotiation message</summary>"
+            f"<div class='expand-body' id='{uid}'>{safe_msg}</div>"
+            f"<button class='copy-btn' onclick=\"navigator.clipboard.writeText("
+            f"document.getElementById('{uid}').innerText);"
+            f"this.textContent='Copied';"
+            f"setTimeout(()=>this.textContent='Copy message',1500)\">Copy message</button>"
+            f"</details>"
+        )
+
+    # MOT history — always show when available, even on compact (near-miss) cards.
+    # v0.9.9: removed `not compact` gate. Near-miss OFFER cards with DVSA data
+    # are the most actionable listings and buyers need to see the MOT history.
+    mot_html = ""
+    _mot_vrm = (listing.vrm or "").strip() or (_resolved[0] if _resolved else "")
+    if listing.mot_history:
+        inner = format_mot_history_html(listing.mot_history, _mot_vrm)
+        if inner:
+            n_tests = len((listing.mot_history or {}).get("motTests") or [])
+            summary_label = (
+                f"DVSA MOT record ({n_tests} tests)"
+                if n_tests > 0 else "DVSA vehicle confirmed — no MOT records"
+            )
+            mot_html = (
+                f"<details class='expandable'>"
+                f"<summary>{summary_label}</summary>"
+                f"<div class='expand-body'>{inner}</div>"
+                f"</details>"
+            )
+
+    # Meta
+    year_str   = str(listing.year) if listing.year else "?"
+    miles_str  = f"{listing.mileage/1000:.0f}k" if listing.mileage else "?"
+    mileage_tag = (
+        f"<span class='tag-mileage'>{miles_str} mi</span>"
+        if listing.mileage else
+        "<span class='tag-mileage is-missing'>mileage n/a</span>"
+    )
+    plat_safe  = html_lib.escape(listing.platform)
+    url_safe   = html_lib.escape(listing.url)
+    title_safe = html_lib.escape(_normalise_title(listing.title[:90]))
+    loc        = _location_label(listing)
+    vrm_filter = "yes" if displayable else "no"
+
+    seen_badges = _seen_badges_html(seen_info or {}, listing.price_gbp)
+
+    cls = ("card"
+           + (" featured" if featured else "")
+           + (" compact" if compact else "")
+           + (" is-auction" if getattr(listing, "is_auction", False) else ""))
+    media_meta = ""
+    if featured:
+        media_meta = (
+            f'<div class="media-meta">{_platform_badge(listing.platform)}'
+            f'<span class="card-meta">{year_str} \u00b7 {loc}</span></div>'
+        )
+    top_meta = "" if featured else f'<span class="card-meta">{year_str} \u00b7 {loc}</span>'
+    cart_button = (
+        f"<button class='cart-btn' type='button' id='cart-btn-{iid}' "
+        f"onclick=\"toggleCart('{raw_iid}')\">Add to cart</button>"
+    )
+
+    return (
+        f'<div class="{cls}"'
+        f' data-decision="{out.decision}"'
+        f' data-platform="{plat_safe}"'
+        f' data-ulez="{ulez_val}"'
+        f' data-vrm="{vrm_filter}"'
+        f' data-auction="{"yes" if getattr(listing, "is_auction", False) else "no"}"'
+        f' data-profit="{out.expected_profit:.0f}"'
+        f' data-price="{listing.price_gbp:.0f}"'
+        f' data-pmot="{out.p_mot:.4f}"'
+        f' data-basket="{"yes" if basket_selected else "no"}"'
+        f' data-item="{raw_iid}"'
+        f' style="border-left:4px solid {border_col}">\n'
+        f'  {_gallery_wrap_html(listing.first_image_url, listing.extra_image_urls, listing.title)}\n'
+        f'  {media_meta}\n'
+        f'  <div class="card-body">\n'
+        f'    <div class="card-top">'
+        f'<span class="rank">#{rank}</span> {_badge(out.decision)} {_platform_badge(listing.platform) if not featured else ""} {basket_badge}{auction_badge}{writeoff_badge}{ulez}'
+        f'{mileage_tag}{(" " + seen_badges) if seen_badges else ""}{top_meta}'
+        f'</div>\n'
+        f'    <a href="{url_safe}" target="_blank" class="card-title">{title_safe}</a>\n'
+        f'    <div class="num-row">\n'
+        f'      <div class="num"><span class="nv">\u00a3{listing.price_gbp:.0f}</span>'
+        f'<span class="nl">Buy</span></div>\n'
+        f'      <div class="num"><span class="nv">\u00a3{deal.expected_resale:.0f}</span>'
+        f'<span class="nl">Resale</span></div>\n'
+        f'      <div class="num"><span class="nv {pcls}">\u00a3{out.expected_profit:.0f}</span>'
+        f'<span class="nl">Profit</span></div>\n'
+        f'      <div class="num"><span class="nv">\u00a3{out.max_bid:.0f}</span>'
+        f'<span class="nl">Max bid</span></div>\n'
+        f'      <div class="num"><span class="nv">\u00a3{deal.base_repair_estimate:.0f}'
+        f'<small style="font-weight:400"> (w/c \u00a3{deal.worst_case_repair:.0f})</small>'
+        f'</span><span class="nl">Repair estimate</span></div>\n'
+        f'      <div class="num"><span class="nv">'
+        f'{_p_mot_label(out.p_mot, listing.mot_history)}'
+        f'</span><span class="nl">p_MOT</span></div>\n'
+        f'    </div>\n'
+        f'    {reason_html}\n'
+        f'    {_score_breakdown_html(deal, out, listing)}\n'
+        f'    <div class="vrm-row">VRM: {vrm_html}</div>\n'
+        f'    {cart_button}\n'
+        f'    {offer_line}{repair_note}{offer_msg_html}{mot_html}\n'
+        f'  </div>\n'
+        f'</div>'
+    )
+
+
+# ---------------------------------------------------------------------------
+# CSS (CSS custom properties for dark mode theming)
+# ---------------------------------------------------------------------------
+
+_CSS = """
+:root {
+  --bg:#f1f5f9; --surface:#fff; --surface2:#f8fafc;
+  --text:#0f172a; --dim:#64748b; --border:#e2e8f0;
+  --hover:#e2e8f0; --link:#1d4ed8;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+}
+[data-theme=dark] {
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d;
+  --text:#e6edf3; --dim:#8b949e; --border:#30363d;
+  --hover:#1f2937; --link:#58a6ff;
+  --shadow:0 1px 3px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+     background:var(--bg);color:var(--text);padding:20px 24px;line-height:1.45}
+.app-shell{max-width:1680px;margin:0 auto}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+code{background:var(--surface2);padding:2px 5px;border-radius:4px;font-size:.88em}
+small{font-size:.8em;color:var(--dim)}
+
+/* header */
+.runtime-banner{display:none}
+.page-header{display:flex;align-items:center;justify-content:space-between;
+             margin-bottom:6px;flex-wrap:wrap;gap:8px}
+h1{font-size:1.18em;letter-spacing:.03em;font-weight:700;
+   color:var(--dim);text-transform:uppercase}
+h1 strong{color:var(--text);font-weight:800}
+.header-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.dark-toggle{padding:5px 11px;border-radius:7px;border:1px solid var(--border);
+             background:transparent;color:var(--dim);cursor:pointer;
+             font-size:.78em;font-weight:600;transition:all .12s}
+.dark-toggle:hover{color:var(--text);border-color:var(--dim)}
+.meta{color:var(--dim);font-size:.8em;margin-bottom:14px;opacity:.8}
+
+/* stat cards */
+.stat-grid{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.stat-card{background:var(--surface);border-radius:10px;padding:12px 16px;
+           box-shadow:var(--shadow);min-width:80px}
+.stat-card .sv{font-size:1.55em;font-weight:700;line-height:1.1}
+.stat-card .sl{font-size:.7em;color:var(--dim);margin-top:2px}
+
+/* section titles */
+.section-title{font-size:1.05em;font-weight:700;margin:28px 0 12px;color:var(--text)}
+.main-grid-section.has-top-strip{margin-top:10px;padding-top:22px;border-top:1px solid var(--border)}
+.main-grid-section.has-top-strip>.section-title:first-child{margin-top:0}
+.section-lead{font-size:.88em;color:var(--dim);font-weight:500;margin:-6px 0 14px;line-height:1.4;max-width:52em}
+
+/* top-3 grid */
+.top3-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+           gap:14px;margin-bottom:4px}
+
+/* filter bar */
+.filter-bar{background:var(--surface);border-radius:14px;padding:12px 14px;
+            box-shadow:var(--shadow);margin-bottom:14px;
+            display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+            position:sticky;top:10px;z-index:40;border:1px solid var(--border);
+            backdrop-filter:blur(6px)}
+.filter-group{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.filter-label{font-size:.75em;font-weight:700;color:var(--dim);
+              text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.fbtn{padding:6px 13px;border-radius:10px;border:1.5px solid var(--border);
+      background:var(--surface2);color:var(--text);cursor:pointer;
+      font-size:.82em;font-weight:650;transition:all .14s}
+.fbtn:hover{border-color:var(--dim);transform:translateY(-1px)}
+.fbtn.active{color:#fff;border-color:transparent}
+.fbtn[data-v=BUY].active{background:#22c55e}
+.fbtn[data-v=OFFER].active{background:#f59e0b}
+.fbtn[data-v=PASS].active{background:#94a3b8}
+.profit-range{display:flex;align-items:center;gap:4px}
+.profit-range input{width:70px;padding:4px 6px;border-radius:6px;
+                    border:1.5px solid var(--border);background:var(--surface2);
+                    color:var(--text);font-size:.82em}
+.sort-sel{padding:5px 10px;border-radius:7px;border:1.5px solid var(--border);
+          background:var(--surface2);color:var(--text);font-size:.82em;cursor:pointer}
+
+/* cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:10px}
+.card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);
+      display:flex;transition:box-shadow .15s,transform .15s;border:1px solid var(--border);overflow:hidden}
+.card:hover{box-shadow:0 8px 22px rgba(0,0,0,.12);transform:translateY(-1px)}
+.card.hidden{display:none!important}
+
+/* thumbnail — fixed-height column so images keep a stable aspect (no vertical
+   stretch when card-body is tall). object-fit:cover inside the box. */
+.thumb-wrap{flex-shrink:0;width:260px;background:transparent;
+            border-radius:10px 0 0 10px;align-self:flex-start;position:relative;
+            display:block;height:200px;min-height:178px;max-height:220px;overflow:hidden}
+/* Sprint 5: gallery carousel arrows */
+.gal-btn{position:absolute;top:50%;transform:translateY(-50%);
+         background:rgba(0,0,0,0.44);border:none;color:#fff;
+         font-size:1.3em;line-height:1;width:26px;height:36px;
+         cursor:pointer;border-radius:5px;opacity:0;transition:opacity .15s;
+         z-index:2;display:flex;align-items:center;justify-content:center;padding:0}
+.thumb-wrap:hover .gal-btn{opacity:.9}
+.gal-prev{left:4px}.gal-next{right:4px}
+.gal-counter{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);
+             background:rgba(0,0,0,0.52);color:#fff;font-size:.62em;
+             padding:1px 6px;border-radius:8px;opacity:0;transition:opacity .15s;
+             white-space:nowrap;pointer-events:none;z-index:2}
+.thumb-wrap:hover .gal-counter{opacity:1}
+.thumb{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.thumb-empty{width:100%;height:100%;display:flex;align-items:center;
+             justify-content:center;font-size:1.8em;color:var(--dim)}
+.card.featured{display:block}
+.card.featured .thumb-wrap{width:100%;border-radius:10px 10px 0 0}
+.card.featured .thumb,.card.featured .thumb-empty{width:100%;height:300px}
+.media-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 12px;
+           border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface2)}
+.compact .thumb-wrap{width:120px;height:100px;min-height:90px;max-height:120px}
+.compact .thumb,.compact .thumb-empty{width:100%;height:100%}
+
+/* density modes */
+body[data-density=dense] .card-grid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:8px}
+body[data-density=dense] .thumb-wrap{width:200px;height:168px;min-height:140px;max-height:190px}
+body[data-density=dense] .thumb,body[data-density=dense] .thumb-empty{width:100%;height:100%}
+body[data-density=dense] .card.featured .thumb,body[data-density=dense] .card.featured .thumb-empty{height:240px}
+body[data-density=dense] .card-body{padding:9px 11px}
+body[data-density=dense] .num-row{gap:7px}
+body[data-density=dense] .meta{margin-bottom:16px}
+body[data-density=dense] .section-title{margin:22px 0 10px}
+
+/* card body */
+.card-body{flex:1;padding:11px 13px;min-width:0}
+.card-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.rank{font-size:.75em;font-weight:700;color:var(--dim)}
+.card-meta{font-size:.74em;color:var(--dim);margin-left:auto}
+.card-title{display:block;font-weight:680;font-size:.98em;margin-bottom:8px;
+            color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-title:hover{color:var(--link)}
+
+/* numbers row */
+.num-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.num{display:flex;flex-direction:column}
+.nv{font-size:.9em;font-weight:700}
+.nl{font-size:.68em;color:var(--dim);margin-top:1px}
+.profit-good{color:#22c55e}
+.profit-mid{color:#f59e0b}
+.profit-bad{color:#ef4444}
+
+/* tags */
+.tag-ulez-ok{font-size:.75em;color:#22c55e;font-weight:600}
+.tag-ulez-fail{font-size:.75em;color:#ef4444;font-weight:600}
+.tag-mileage{font-size:.72em;color:#0369a1;background:#e0f2fe;padding:2px 8px;
+             border-radius:8px;font-weight:700}
+.tag-mileage.is-missing{color:#64748b;background:#e2e8f0}
+[data-theme=dark] .tag-mileage{color:#bae6fd;background:#0b3350}
+[data-theme=dark] .tag-mileage.is-missing{color:#94a3b8;background:#1f2937}
+.tag-writeoff{font-size:.75em;color:#7a4f10;background:#f8e8bd;padding:2px 8px;
+              border-radius:8px;font-weight:700;margin-right:4px}
+[data-theme=dark] .tag-writeoff{color:#f3d598;background:#3a2f1c}
+.tag-basket{font-size:.75em;color:#0c4a6e;background:#bae6fd;padding:2px 8px;
+            border-radius:8px;font-weight:700;margin-right:4px}
+[data-theme=dark] .tag-basket{color:#bae6fd;background:#0b3350}
+.warn{color:#7a4f10;font-weight:600}
+[data-theme=dark] .warn{color:#d9b16d}
+.dim{color:var(--dim)}
+.tag-no-vrm{font-size:.75em;color:#92400e;background:#fef3c7;padding:2px 8px;border-radius:8px;font-weight:700}
+[data-theme=dark] .tag-no-vrm{color:#fde68a;background:#3a2a0a}
+.plat-badge{display:inline-flex;align-items:center;justify-content:center;color:var(--dim);vertical-align:middle}
+.plat-badge svg{display:block}
+.plat-badge-mp{padding:4px 8px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);
+               min-height:40px;min-width:40px;display:inline-flex;align-items:center;justify-content:center}
+.plat-badge-mp svg{flex-shrink:0}
+.plat-badge-img-wrap{padding:4px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);
+                  display:inline-flex;align-items:center;justify-content:center;min-height:58px}
+.plat-badge-img{height:56px;width:auto;max-width:280px;object-fit:contain;display:block}
+[data-theme=dark] .plat-badge-img{opacity:.94}
+.plat-fbtn-mp{padding:8px 14px!important;min-width:48px;min-height:48px;display:inline-flex;align-items:center;justify-content:center}
+.plat-filter-img{height:56px;width:auto;max-width:280px;object-fit:contain;display:block}
+.footer-logos{display:inline-flex;align-items:center;gap:10px;margin-left:10px;vertical-align:middle}
+.footer-logo img{height:52px;width:auto;max-width:280px;object-fit:contain;opacity:.9}
+/* Sprint 9: seen-before / price-trend badges */
+.tag-seen{font-size:.75em;color:#475569;background:#e2e8f0;padding:2px 7px;border-radius:8px;font-weight:600}
+[data-theme=dark] .tag-seen{color:#94a3b8;background:#1e293b}
+.tag-price-drop{font-size:.75em;color:#15803d;background:#dcfce7;padding:2px 7px;border-radius:8px;font-weight:700}
+[data-theme=dark] .tag-price-drop{color:#86efac;background:#14532d}
+.tag-price-rise{font-size:.75em;color:#b91c1c;background:#fee2e2;padding:2px 7px;border-radius:8px;font-weight:700}
+[data-theme=dark] .tag-price-rise{color:#fca5a5;background:#450a0a}
+.tag-watchlisted{font-size:.75em;color:#7c3aed;background:#ede9fe;padding:2px 7px;border-radius:8px;font-weight:600}
+[data-theme=dark] .tag-watchlisted{color:#c4b5fd;background:#2e1065}
+.tag-traded{font-size:.75em;color:#1d4ed8;background:#dbeafe;padding:2px 7px;border-radius:8px;font-weight:600}
+[data-theme=dark] .tag-traded{color:#93c5fd;background:#1e3a5f}
+.tag-lead{font-size:.75em;color:#92400e;background:#fef3c7;padding:2px 7px;border-radius:8px;font-weight:600}
+[data-theme=dark] .tag-lead{color:#fde68a;background:#451a03}
+/* Sprint 15: auction listing badge — distinct amber/hammer style, not too loud */
+.tag-auction{font-size:.72em;color:#78350f;background:#fef9c3;padding:2px 8px;border-radius:8px;font-weight:700;letter-spacing:.02em;border:1px solid #fde68a}
+[data-theme=dark] .tag-auction{color:#fbbf24;background:#1c1508;border-color:#78350f}
+/* Auction card has a subtle warm left border so it reads as different at a glance */
+.card.is-auction{border-left:3px solid #f59e0b}
+[data-theme=dark] .card.is-auction{border-left-color:#d97706}
+
+/* vrm */
+.vrm-row{font-size:.82em;margin-bottom:5px;display:flex;align-items:center;
+         flex-wrap:wrap;gap:4px}
+.vrm-form{display:inline-flex;gap:4px;align-items:center}
+.vrm-input{padding:3px 6px;border-radius:5px;border:1.5px solid var(--border);
+           background:var(--surface2);color:var(--text);font-size:.9em;width:88px}
+.vrm-btn{padding:3px 8px;border-radius:5px;border:1.5px solid var(--border);
+         background:var(--surface);color:var(--text);cursor:pointer;font-size:.8em}
+.vrm-saved{font-weight:700;color:#22c55e}
+.cart-btn{margin:4px 0 6px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);
+         background:var(--surface2);color:var(--text);font-size:.78em;font-weight:600;cursor:pointer}
+.cart-btn:hover{border-color:var(--dim)}
+.cart-btn.in-cart{background:#0f3f2a;border-color:#22c55e;color:#d1fae5}
+.cart-clear{padding:5px 9px;border-radius:8px;border:1px solid var(--border);
+         background:var(--surface2);color:var(--dim);font-size:.76em;font-weight:600;cursor:pointer}
+.cart-clear:hover{color:var(--text);border-color:var(--dim)}
+.cart-open{padding:5px 9px;border-radius:8px;border:1px solid var(--border);
+        background:var(--surface2);color:var(--text);font-size:.76em;font-weight:600;cursor:pointer}
+.cart-open:hover{border-color:var(--dim)}
+.cart-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+        padding:10px 12px;margin-bottom:12px;box-shadow:var(--shadow)}
+.cart-panel.hidden{display:none}
+.cart-panel-title{font-size:.9em;font-weight:700;margin-bottom:6px}
+.cart-panel-empty{font-size:.82em;color:var(--dim)}
+.cart-panel-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.cart-row{border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--surface2)}
+.cart-row a{display:block;font-size:.84em;font-weight:650;margin-bottom:3px;color:var(--text);
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cart-row-meta{font-size:.78em;color:var(--dim)}
+
+/* hints */
+.offer-hint{font-size:.82em;font-weight:600;color:#f59e0b;margin-bottom:4px}
+.offer-hint.ok{color:#22c55e}
+.decision-reason{font-size:.78em;line-height:1.35;color:var(--dim);margin:6px 0 2px;
+                 padding:5px 8px;background:rgba(100,116,139,.12);border-radius:6px;
+                 border-left:3px solid var(--border)}
+[data-theme=dark] .decision-reason{background:rgba(148,163,184,.1)}
+.repair-note{font-size:.76em;color:#7a4f10;margin-bottom:4px;padding:4px 8px;
+             background:#f7ead1;border-radius:6px}
+[data-theme=dark] .repair-note{background:#342a1f;color:#d9b16d}
+
+/* expandables */
+.expandable{margin-top:6px}
+.expandable summary{cursor:pointer;font-size:.8em;color:var(--link);
+                    user-select:none;list-style:none;display:inline-flex;
+                    align-items:center;gap:4px}
+.expandable summary::-webkit-details-marker{display:none}
+.expandable summary::before{content:'\\25b6';font-size:.65em;
+                             display:inline-block;transition:transform .15s}
+.expandable[open] summary::before{transform:rotate(90deg)}
+.expand-body{margin-top:6px;font-size:.92em;line-height:1.5;
+             background:var(--surface2);border-radius:6px;
+             padding:10px 12px;border:1px solid var(--border)}
+.copy-btn{margin-top:5px;padding:3px 10px;border-radius:5px;
+          border:1px solid var(--border);background:var(--surface);
+          color:var(--text);cursor:pointer;font-size:.78em}
+
+/* near-miss grid */
+.nearmiss-grid{display:grid;
+               grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+               gap:10px;margin-top:8px}
+
+/* avoid toggle */
+.avoid-toggle{cursor:pointer;color:#7a4f10;font-weight:700;font-size:1em;
+              user-select:none;padding:8px 0;margin-top:28px;display:block}
+[data-theme=dark] .avoid-toggle{color:#d9b16d}
+
+/* footer */
+.footer{margin-top:36px;color:var(--dim);font-size:.78em;
+        border-top:1px solid var(--border);padding-top:12px}
+
+/* Sprint 7: print / PDF */
+@media print {
+  .filter-bar,.header-actions,.cart-btn,.vrm-form,.vrm-btn,
+  .gal-btn,.gal-counter,.avoid-toggle{display:none!important}
+  details{display:block!important}
+  details summary{display:none}
+  .expand-body{display:block!important}
+  .card:hover{box-shadow:none;transform:none}
+  body{padding:8px}
+  .card-grid{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
+  .card{break-inside:avoid}
+}
+
+/* UK 3D stats board */
+.stats-map-details{background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:0 16px 16px;margin-bottom:24px;box-shadow:var(--shadow)}
+.stats-map-details>summary.section-title{margin:14px 0 10px;list-style:none;
+  display:flex;align-items:center;gap:8px;cursor:pointer}
+.stats-map-details>summary.section-title::-webkit-details-marker{display:none}
+.stats-map-details>summary.section-title::before{content:'\\25b6';font-size:.65em;
+  transition:transform .15s;color:var(--dim)}
+.stats-map-details[open]>summary.section-title::before{transform:rotate(90deg)}
+.stats-map-intro{font-size:.85em;color:var(--dim);margin:0 0 12px;line-height:1.45}
+.stats-map-proj{font-size:.78em;color:var(--dim);margin:0 0 10px;line-height:1.4;opacity:.92}
+.stats-map-hint{font-size:.72em;color:var(--dim);margin:6px 0 0;line-height:1.35;opacity:.88}
+.stats-map-coords-msg{font-size:.82em;color:#b45309;margin:10px 0 0;padding:8px 10px;
+  background:#fffbeb;border-radius:8px;border:1px solid #fcd34d}
+[data-theme=dark] .stats-map-coords-msg{color:#fde68a;background:#3a2a0a;border-color:#92400e}
+.stats-map-canvas-wrap{position:relative;border-radius:14px;overflow:hidden;
+  border:1px solid var(--border);background:radial-gradient(ellipse 120% 80% at 50% 100%,#0c1929 0%,#070b12 55%);
+  min-height:440px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 12px 40px rgba(0,0,0,.35)}
+.stats-map-canvas-wrap canvas{display:block;width:100%;height:520px;min-height:320px}
+.stats-map-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.78em;color:var(--dim);
+  margin-top:10px;padding:8px 0;align-items:center}
+.stats-map-legend span{display:inline-flex;align-items:center;gap:6px}
+.stats-map-legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.stats-map-heat{height:10px;width:120px;border-radius:6px;
+  background:linear-gradient(90deg,#22d3ee,#22c55e,#eab308,#f97316,#ef4444)}
+.stats-map-table-wrap{overflow:auto;margin-top:12px;max-height:220px;border-radius:10px;
+  border:1px solid var(--border)}
+.stats-map-table{width:100%;border-collapse:collapse;font-size:.8em}
+.stats-map-table th,.stats-map-table td{padding:7px 10px;text-align:left;
+  border-bottom:1px solid var(--border)}
+.stats-map-table th{color:var(--dim);font-weight:650;text-transform:uppercase;
+  font-size:.72em;letter-spacing:.04em;background:var(--surface2);position:sticky;top:0}
+.stats-map-table tr:hover td{background:rgba(99,102,241,.06)}
+"""
+
+
+# ---------------------------------------------------------------------------
+# JavaScript (dark mode + filters + manual VRM)
+# ---------------------------------------------------------------------------
+
+_JS = r"""
+/* Dark mode — applied before paint via inline script in <head> */
+function toggleDark() {
+  const cur  = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('dealerly_theme', next);
+  const btn = document.getElementById('dark-btn');
+  if (btn) btn.textContent = next === 'dark' ? '\u2600 Light' : '\u263e Dark';
+}
+
+function toggleDensity() {
+  const body = document.body;
+  if (!body) return;
+  const cur = body.getAttribute('data-density') || 'comfortable';
+  const next = cur === 'dense' ? 'comfortable' : 'dense';
+  body.setAttribute('data-density', next);
+  localStorage.setItem('dealerly_density', next);
+  const btn = document.getElementById('density-btn');
+  if (btn) btn.textContent = next === 'dense' ? 'Comfortable View' : 'Dense View';
+}
+
+/* Manual VRM — restore saved values from localStorage on load.
+   Uses data-item querySelectorAll so BOTH the top-3 strip instance and the
+   main grid instance of the same listing are updated together. */
+function _applyVrm(itemId, val) {
+  document.querySelectorAll(`.card[data-item="${itemId}"]`).forEach(card => {
+    const disp = card.querySelector('[id^="vrm-disp-"]');
+    const form = card.querySelector('.vrm-form');
+    const warn = card.querySelector('.vrm-row .warn');
+    if (disp) { disp.textContent = val; disp.className = 'vrm-saved'; }
+    if (form) form.style.display = 'none';
+    if (warn) warn.style.display = 'none';
+  });
+}
+
+(function () {
+  const seen = new Set();
+  document.querySelectorAll('.card[data-item]').forEach(card => {
+    const id = card.dataset.item;
+    if (seen.has(id)) return;
+    seen.add(id);
+    const val = localStorage.getItem('vrm_' + id);
+    if (val) _applyVrm(id, val);
+  });
+})();
+
+function saveVrm(ev, itemId, iid) {
+  ev.preventDefault();
+  const inp = document.getElementById('vrm-inp-' + iid);
+  const val = inp.value.trim().toUpperCase().replace(/\s/g, '');
+  if (!val) return;
+  localStorage.setItem('vrm_' + itemId, val);
+  _applyVrm(itemId, val);
+}
+
+const CART_KEY = 'dealerly_cart_v1';
+function _loadCart() {
+  try {
+    const raw = localStorage.getItem(CART_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? new Set(arr) : new Set();
+  } catch (_) {
+    return new Set();
+  }
+}
+function _saveCart(setObj) {
+  localStorage.setItem(CART_KEY, JSON.stringify(Array.from(setObj)));
+}
+function _renderCartButtons() {
+  const cart = _loadCart();
+  document.querySelectorAll('.card[data-item]').forEach(card => {
+    const id = card.dataset.item;
+    const btn = card.querySelector('.cart-btn');
+    if (!btn) return;
+    const inCart = cart.has(id);
+    btn.classList.toggle('in-cart', inCart);
+    btn.textContent = inCart ? 'Remove from cart' : 'Add to cart';
+  });
+}
+function _renderCartSummary() {
+  const cart = _loadCart();
+  let spend = 0, profit = 0;
+  document.querySelectorAll('.card[data-item]').forEach(card => {
+    if (!cart.has(card.dataset.item)) return;
+    spend += parseFloat(card.dataset.price || '0') || 0;
+    profit += parseFloat(card.dataset.profit || '0') || 0;
+  });
+  const el = document.getElementById('cart-summary');
+  if (!el) return;
+  const budget = parseFloat(el.dataset.budget || '0') || 0;
+  const left = Math.max(0, budget - spend);
+  el.textContent = `Cart ${cart.size} · £${Math.round(spend)} spend · £${Math.round(left)} left · ~£${Math.round(profit)} profit`;
+  const cartBtn = document.getElementById('cart-open-btn');
+  if (cartBtn) cartBtn.textContent = `Open cart (${cart.size})`;
+}
+function _renderCartPanel() {
+  const cart = _loadCart();
+  const panel = document.getElementById('cart-panel');
+  const listEl = document.getElementById('cart-panel-list');
+  const emptyEl = document.getElementById('cart-panel-empty');
+  if (!panel || !listEl || !emptyEl) return;
+  const cards = Array.from(document.querySelectorAll('#main-grid .card[data-item]'));
+  const seen = new Set();
+  const rows = [];
+  cards.forEach(card => {
+    const id = card.dataset.item;
+    if (!id || !cart.has(id) || seen.has(id)) return;
+    seen.add(id);
+    const titleEl = card.querySelector('.card-title');
+    const title = titleEl ? titleEl.textContent.trim() : id;
+    const href = titleEl ? titleEl.getAttribute('href') : '#';
+    const price = Math.round(parseFloat(card.dataset.price || '0') || 0);
+    const profit = Math.round(parseFloat(card.dataset.profit || '0') || 0);
+    rows.push(
+      `<div class="cart-row"><a href="${href}" target="_blank">${title}</a>` +
+      `<div class="cart-row-meta">Buy £${price} · Profit ~£${profit}</div></div>`
+    );
+  });
+  listEl.innerHTML = rows.join('');
+  emptyEl.style.display = rows.length ? 'none' : 'block';
+}
+function toggleCartPanel() {
+  const panel = document.getElementById('cart-panel');
+  if (!panel) return;
+  panel.classList.toggle('hidden');
+  if (!panel.classList.contains('hidden')) _renderCartPanel();
+}
+function toggleCart(itemId) {
+  const cart = _loadCart();
+  if (cart.has(itemId)) cart.delete(itemId); else cart.add(itemId);
+  _saveCart(cart);
+  _renderCartButtons();
+  _renderCartSummary();
+  _renderCartPanel();
+}
+function clearCart() {
+  _saveCart(new Set());
+  _renderCartButtons();
+  _renderCartSummary();
+  _renderCartPanel();
+}
+
+/* Filter + sort state */
+const state = {
+  dec: 'ALL', plat: 'ALL', ulez: 'ALL', vrm: 'ALL', auction: 'ALL',
+  profMin: -99999, profMax: 99999, sort: 'profit_desc'
+};
+
+function applyFilters() {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  const cards = Array.from(grid.querySelectorAll('.card'));
+
+  cards.forEach(c => {
+    const show =
+      (state.dec     === 'ALL' || c.dataset.decision === state.dec)    &&
+      (state.plat    === 'ALL' || c.dataset.platform === state.plat)   &&
+      (state.ulez    === 'ALL' || c.dataset.ulez     === state.ulez)   &&
+      (state.vrm     === 'ALL' || c.dataset.vrm      === state.vrm)    &&
+      (state.auction === 'ALL' || c.dataset.auction  === state.auction) &&
+      parseFloat(c.dataset.profit) >= state.profMin &&
+      parseFloat(c.dataset.profit) <= state.profMax;
+    c.classList.toggle('hidden', !show);
+  });
+
+  const visible = cards.filter(c => !c.classList.contains('hidden'));
+  visible.sort((a, b) => {
+    switch (state.sort) {
+      case 'profit_desc': return parseFloat(b.dataset.profit) - parseFloat(a.dataset.profit);
+      case 'profit_asc':  return parseFloat(a.dataset.profit) - parseFloat(b.dataset.profit);
+      case 'price_asc':   return parseFloat(a.dataset.price)  - parseFloat(b.dataset.price);
+      case 'price_desc':  return parseFloat(b.dataset.price)  - parseFloat(a.dataset.price);
+      case 'pmot_desc':   return parseFloat(b.dataset.pmot)   - parseFloat(a.dataset.pmot);
+    }
+    return 0;
+  });
+  visible.forEach(c => grid.appendChild(c));
+
+  const cnt = document.getElementById('result-count');
+  if (cnt) cnt.textContent = visible.length + ' listing' + (visible.length !== 1 ? 's' : '');
+  _renderCartButtons();
+  _renderCartSummary();
+  _renderCartPanel();
+}
+
+function setFilter(key, val, el) {
+  state[key] = val;
+  if (el) {
+    const grp = el.closest('.filter-group');
+    if (grp) grp.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+  applyFilters();
+}
+
+function setProfitRange() {
+  const lo = document.getElementById('prof-min');
+  const hi = document.getElementById('prof-max');
+  state.profMin = (lo && lo.value !== '') ? parseFloat(lo.value) : -99999;
+  state.profMax = (hi && hi.value !== '') ? parseFloat(hi.value) :  99999;
+  applyFilters();
+}
+
+function setSort(sel) {
+  state.sort = sel.value;
+  applyFilters();
+}
+
+/* Sprint 7: print / PDF */
+function printReport() { window.print(); }
+
+/* Sprint 5: image gallery navigation */
+function galNav(btn, dir) {
+  var wrap = btn.closest('.thumb-wrap');
+  var urls = JSON.parse(wrap.dataset.gallery || '[]');
+  if (urls.length < 2) return;
+  var idx = ((parseInt(wrap.dataset.idx, 10) || 0) + dir + urls.length) % urls.length;
+  wrap.dataset.idx = idx;
+  var img = wrap.querySelector('img.thumb');
+  if (img) img.src = urls[idx];
+  var ctr = wrap.querySelector('.gal-counter');
+  if (ctr) ctr.textContent = (idx + 1) + '/' + urls.length;
+}
+"""
+
+
+def write_loading_screen(
+    *,
+    progress_pct: int,
+    stage_text: str,
+    done: bool = False,
+    report_path: str = "",
+) -> str:
+    """
+    Write/update a local loading screen used while pipeline phases run.
+
+    When done=True, the page fades out and redirects to report_path in-place.
+    """
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    loading_path = REPORTS_DIR / "dealerly_loading.html"
+    state_path = REPORTS_DIR / "dealerly_loading_state.json"
+    pct = max(0, min(100, int(progress_pct)))
+    stage_safe = html_lib.escape(stage_text or "Working...")
+    done_text = "true" if done else "false"
+    report_uri = Path(report_path).resolve().as_uri() if report_path else ""
+    report_uri_safe = html_lib.escape(report_uri)
+    try:
+        state_path.write_text(
+            json.dumps(
+                {
+                    "pct": pct,
+                    "stage": stage_text or "Working...",
+                    "done": bool(done),
+                    "report_url": report_uri,
+                },
+                ensure_ascii=True,
+            ),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+    # Sprint 15: Phase milestone labels — order matches pipeline phase numbers
+    _PHASE_LABELS = [
+        ("init",    "Init"),
+        ("phase 1", "Gather"),
+        ("phase 2", "Score"),
+        ("phase 3", "Enrich"),
+        ("phase 4", "Final"),
+        ("phase 5", "Offers"),
+        ("phase 6", "Analytics"),
+        ("phase 7", "Workflow"),
+        ("finaliz", "Report"),
+    ]
+    _stage_lower = (stage_text or "").lower()
+    # Determine which phase is active (first match wins)
+    _active_idx = 0
+    for _pi, (_key, _lbl) in enumerate(_PHASE_LABELS):
+        if _key in _stage_lower:
+            _active_idx = _pi
+            break
+    # Build milestone chips HTML
+    _chips_html = ""
+    for _pi, (_key, _lbl) in enumerate(_PHASE_LABELS):
+        if _pi < _active_idx:
+            _cls = "chip done"
+            _ico = "&#10003;"
+        elif _pi == _active_idx:
+            _cls = "chip active"
+            _ico = f'<span class="spin">&#9679;</span>'
+        else:
+            _cls = "chip pending"
+            _ico = "&#x25CB;"
+        _chips_html += f'<div class="{_cls}" data-phase="{_pi}"><span class="chip-icon">{_ico}</span><span class="chip-label">{_lbl}</span></div>\n'
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dealerly Loading</title>
+  <style>
+    :root {{
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --dim: #8b949e;
+      --accent: #58a6ff;
+      --accent2: #22c55e;
+      --done: #22c55e;
+      --active-bg: #0f2236;
+      --active-border: #3b82f6;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 20% 20%, #1b2432 0%, var(--bg) 55%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      transition: opacity .45s ease, transform .45s ease;
+    }}
+    body.fade-out {{ opacity: 0; transform: scale(0.985); }}
+    .shell {{
+      width: min(720px, 94vw);
+      background: linear-gradient(180deg, #161b22, #0f151d);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 32px 28px 26px;
+      box-shadow: 0 20px 52px rgba(0,0,0,.4);
+    }}
+    .title {{ font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }}
+    .subtitle {{ color: var(--dim); font-size: .88rem; margin-bottom: 22px; }}
+    .bar {{
+      width: 100%; height: 8px; border-radius: 999px;
+      background: #0b1324; border: 1px solid #1e293b; overflow: hidden;
+      margin-bottom: 18px;
+    }}
+    .fill {{
+      height: 100%; width: {pct}%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
+      background-size: 220% 100%;
+      animation: flow 1.4s linear infinite; transition: width .6s ease;
+    }}
+    @keyframes flow {{ from {{ background-position: 0% 50%; }} to {{ background-position: 200% 50%; }} }}
+    /* Phase milestone row — chips spaced well apart */
+    .phases {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 22px 28px;
+      margin-bottom: 22px;
+      padding: 0 2px;
+    }}
+    .chip {{
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      font-size: .82rem;
+      font-weight: 500;
+      transition: all .3s ease;
+      white-space: nowrap;
+    }}
+    .chip.pending {{
+      background: rgba(255,255,255,.03);
+      border-color: #2d3748;
+      color: #4b5563;
+    }}
+    .chip.done {{
+      background: rgba(34,197,94,.08);
+      border-color: rgba(34,197,94,.25);
+      color: var(--done);
+    }}
+    .chip.active {{
+      background: var(--active-bg);
+      border-color: var(--active-border);
+      color: #93c5fd;
+      box-shadow: 0 0 12px rgba(59,130,246,.18);
+    }}
+    .chip-icon {{ font-size: .72rem; opacity: .85; }}
+    @keyframes pulse-spin {{
+      0%,100% {{ opacity:.4; transform:scale(.9); }}
+      50% {{ opacity:1; transform:scale(1.15); }}
+    }}
+    .spin {{ display:inline-block; animation: pulse-spin 1.1s ease-in-out infinite; }}
+    /* Current stage text row — avoid overlap on narrow viewports */
+    .row {{
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 14px; font-size: .9rem; flex-wrap: wrap;
+      border-top: 1px solid #1e293b; padding-top: 16px;
+    }}
+    .stage {{ color: #cbd5e1; flex: 1 1 220px; min-width: 0; line-height: 1.35;
+      overflow-wrap: anywhere; word-break: break-word; white-space: normal; }}
+    .pct {{ font-weight: 700; color: #86efac; min-width: 48px; text-align: right; flex: 0 0 auto; font-size: 1.0rem;
+      align-self: center; }}
+    .pulse {{ margin-top: 14px; color: var(--dim); font-size: .8rem; letter-spacing: .01em; }}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="title">Dealerly</div>
+    <div class="subtitle">Building report &mdash; sourcing, enrichment, scoring &amp; workflow</div>
+    <div class="bar"><div class="fill" id="fillEl"></div></div>
+    <div class="phases" id="phasesEl">
+{_chips_html}    </div>
+    <div class="row">
+      <span class="stage" id="stageEl">{stage_safe}</span>
+      <span class="pct" id="pctEl">{pct}%</span>
+    </div>
+    <div class="pulse">Please keep this window open.</div>
+  </div>
+  <script>
+    const stageEl = document.getElementById('stageEl');
+    const pctEl   = document.getElementById('pctEl');
+    const fillEl  = document.getElementById('fillEl');
+    const phaseKeys = ['init','phase 1','phase 2','phase 3','phase 4','phase 5','phase 6','phase 7','finaliz'];
+    const localDone = {done_text};
+    const localReport = "{report_uri_safe}";
+    let redirected = false;
+
+    function updateChips(stage) {{
+      const sl = (stage || '').toLowerCase();
+      let active = 0;
+      for (let i = 0; i < phaseKeys.length; i++) {{
+        if (sl.includes(phaseKeys[i])) {{ active = i; break; }}
+      }}
+      const chips = document.querySelectorAll('#phasesEl .chip');
+      chips.forEach((c, i) => {{
+        c.className = 'chip ' + (i < active ? 'done' : i === active ? 'active' : 'pending');
+        const ico = c.querySelector('.chip-icon');
+        if (ico) {{
+          if (i < active) ico.innerHTML = '&#10003;';
+          else if (i === active) ico.innerHTML = '<span class="spin">&#9679;</span>';
+          else ico.innerHTML = '&#x25CB;';
+        }}
+      }});
+    }}
+
+    function applyState(s) {{
+      if (!s) return;
+      const pct = Math.max(0, Math.min(100, parseInt(s.pct ?? 0, 10)));
+      if (fillEl) fillEl.style.width = pct + '%';
+      if (pctEl) pctEl.textContent = pct + '%';
+      if (stageEl && typeof s.stage === 'string') {{
+        stageEl.textContent = s.stage;
+        updateChips(s.stage);
+      }}
+      if (!redirected && s.done && s.report_url) {{
+        redirected = true;
+        let target = s.report_url;
+        if (window.location.protocol.startsWith('http') && String(target).startsWith('file://')) {{
+          target = '/open-report?u=' + encodeURIComponent(String(target));
+        }}
+        document.body.classList.add('fade-out');
+        setTimeout(() => window.location.href = target, 700);
+        setTimeout(() => {{
+          if (window.location.pathname.includes('/loading')) {{
+            const shell = document.querySelector('.shell');
+            if (shell) {{
+              const a = document.createElement('a');
+              a.href = target; a.textContent = 'Open report now';
+              a.style.cssText = 'display:inline-block;margin-top:10px;color:#93c5fd';
+              shell.appendChild(a);
+            }}
+          }}
+        }}, 2200);
+      }}
+    }}
+
+    if (localDone && localReport) {{
+      applyState({{pct:{pct}, stage:{json.dumps(stage_text or "Working...", ensure_ascii=True)}, done:true, report_url:localReport}});
+    }} else if (window.location.protocol.startsWith('http')) {{
+      const poll = async () => {{
+        try {{
+          const r = await fetch('/loading-state?_=' + Date.now(), {{cache: 'no-store'}});
+          if (!r.ok) return;
+          applyState(await r.json());
+        }} catch (_e) {{}}
+      }};
+      poll();
+      setInterval(poll, 700);
+    }} else {{
+      setInterval(() => {{ if (!redirected) window.location.reload(); }}, 1400);
+    }}
+  </script>
+</body>
+</html>"""
+
+    # Atomic write to avoid transient blank reads while /loading is being served.
+    tmp_path = loading_path.with_suffix(".html.tmp")
+    tmp_path.write_text(html, encoding="utf-8")
+    tmp_path.replace(loading_path)
+    return str(loading_path)
+
+
+# ---------------------------------------------------------------------------
+# UK 3D stats board (Three.js, self-contained)
+# ---------------------------------------------------------------------------
+
+def _uk_stats_map_section_html(runs: List[Dict[str, Any]]) -> str:
+    """
+    3D board over a projected UK plane: column height = *new* observations this run;
+    ground disk size = search radius (miles). Repeat sightings are listed but do not
+    drive bar height.
+    """
+    if not runs:
+        return (
+            '<details class="stats-map-details" open>'
+            '<summary class="section-title">UK stats board</summary>'
+            '<p class="stats-map-intro">After your first pipeline run, this section shows '
+            "each run's buyer postcode (geocoded), search radius, and how many price "
+            "observations were <strong>new listings</strong> vs <strong>repeat</strong> "
+            "sightings.</p>"
+            '<p class="meta">No runs in the database yet.</p>'
+            "</details>"
+        )
+
+    payload = json.dumps(
+        [
+            {
+                "run_at": r.get("run_at", ""),
+                "buyer_postcode": r.get("buyer_postcode", ""),
+                "lat": r.get("lat"),
+                "lon": r.get("lon"),
+                "search_radius_miles": int(r.get("search_radius_miles") or 0),
+                "new_observations": int(r.get("new_observations") or 0),
+                "repeat_observations": int(r.get("repeat_observations") or 0),
+                "total_price_observations_in_db": int(
+                    r.get("total_price_observations_in_db") or 0
+                ),
+            }
+            for r in runs
+        ],
+        ensure_ascii=False,
+    )
+    # Prevent premature </script> if JSON ever contained that substring
+    safe_payload = payload.replace("</", "<\\/")
+    safe_outline = _embed_uk_outline_json().replace("</", "<\\/")
+    tbody_html = "".join(_uk_stats_map_table_row(r) for r in runs[:15])
+
+    head = """<details class="stats-map-details" open>
+  <summary class="section-title">Pipeline Coverage Map (3D WebGL)</summary>
+  <p class="stats-map-intro">Interactive UK view below — <strong>not</strong> the console log. Bars = new listings this run. Loads Three.js from <code>unpkg.com</code> with <code>jsdelivr</code> fallback; if the canvas stays black, allow those CDNs or open <code>reports/uk_stats_map.html</code> via <code>--stats-map</code>.</p>
+  <div class="stats-map-canvas-wrap" id="uk-stats-map-host">
+    <canvas id="uk-stats-map-canvas" aria-label="3D UK pipeline coverage map"></canvas>
+  </div>
+  <div class="stats-map-legend">
+    <span>Bar height = new listings this run &nbsp;&middot;&nbsp; Colour = density &nbsp;&middot;&nbsp; Drag to orbit &nbsp;&middot;&nbsp; Scroll to zoom</span>
+  </div>
+  <script type="application/json" id="pipeline-runs-json">"""
+    mid_outline = """</script>
+  <script type="application/json" id="uk-outline-json">"""
+    mid = """</script>
+  <script>
+  // Three.js loader with triple-CDN fallback (unpkg → jsdelivr → cdnjs)
+  (function() {
+    var cdns = [
+      { three: 'https://unpkg.com/three@0.128.0/build/three.min.js',
+        orbit: 'https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js' },
+      { three: 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js',
+        orbit: 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js' },
+      { three: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+        orbit: 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js' },
+    ];
+    var idx = 0;
+    function loadScript(url, cb) {
+      var s = document.createElement('script');
+      s.src = url; s.crossOrigin = 'anonymous';
+      s.onload = function() { cb(true); };
+      s.onerror = function() { cb(false); };
+      document.head.appendChild(s);
+    }
+    function tryNext() {
+      if (idx >= cdns.length) {
+        var h = document.getElementById('uk-stats-map-host');
+        if (h) h.innerHTML = '<p class="stats-map-coords-msg" role="alert">3D map scripts failed to load from all CDNs. Check network, allow <code>unpkg.com</code> / <code>cdn.jsdelivr.net</code> / <code>cdnjs.cloudflare.com</code>, or open <code>reports/uk_stats_map.html</code> via a local server.</p>';
+        return;
+      }
+      var cdn = cdns[idx]; idx++;
+      loadScript(cdn.three, function(ok) {
+        if (!ok || typeof THREE === 'undefined') { tryNext(); return; }
+        loadScript(cdn.orbit, function() {
+          // OrbitControls is optional — init map even without it
+          if (typeof window.__dealerlyInitMap === 'function') window.__dealerlyInitMap();
+        });
+      });
+    }
+    tryNext();
+  })();
+  </script>
+  <script>
+  window.__dealerlyInitMap = function() {
+  var el = document.getElementById('pipeline-runs-json');
+  var RUNS = [];
+  try { RUNS = JSON.parse(el ? el.textContent : '[]'); } catch (e) { RUNS = []; }
+  var outlineEl = document.getElementById('uk-outline-json');
+  var OUTLINE = { rings: [] };
+  try { OUTLINE = JSON.parse(outlineEl ? outlineEl.textContent : '{}'); } catch (e2) { OUTLINE = { rings: [] }; }
+  var canvas = document.getElementById('uk-stats-map-canvas');
+  var hostEl = document.getElementById('uk-stats-map-host');
+  if (!canvas || typeof THREE === 'undefined') {
+    return;
+  }
+  try {
+  const H = 520;
+  function mapWidth() {
+    var w = hostEl ? hostEl.clientWidth : 0;
+    if (!w || w < 40) w = canvas.clientWidth || 0;
+    if (!w || w < 40) w = Math.min(900, Math.max(320, (window.innerWidth || 900) - 48));
+    return Math.max(320, Math.floor(w));
+  }
+  var W = mapWidth();
+  canvas.width = W; canvas.height = H;
+
+  const scene = new THREE.Scene();
+  // Deep twilight sky gradient effect via background color
+  scene.background = new THREE.Color(0x0a1628);
+  scene.fog = new THREE.FogExp2(0x0d1f38, 0.006);
+
+  const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 600);
+  camera.position.set(5, 38, 58);
+
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+  if (!renderer.getContext()) {
+    throw new Error('WebGL context unavailable — check GPU drivers / hardware acceleration');
+  }
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = false;
+
+  // --- Lighting: Apple Maps warm-cool separation ---
+  scene.add(new THREE.AmbientLight(0xdce8f5, 0.5));
+  const sky = new THREE.HemisphereLight(0x9bbfe0, 0x0a2040, 0.55);
+  scene.add(sky);
+  const sun = new THREE.DirectionalLight(0xffe8c0, 0.9);
+  sun.position.set(-20, 60, 30);
+  scene.add(sun);
+  const bounce = new THREE.DirectionalLight(0x5ea8ff, 0.28);
+  bounce.position.set(32, 8, -12);
+  scene.add(bounce);
+
+  const minLon = -8.0, maxLon = 2.0, minLat = 49.4, maxLat = 61.0;
+  function project(lat, lon) {
+    const x = ((lon - minLon) / (maxLon - minLon) - 0.5) * 52;
+    const z = -((lat - minLat) / (maxLat - minLat) - 0.5) * 58;
+    return [x, z];
+  }
+
+  // --- Sea: animated shimmer using emissive pulse ---
+  const seaMat = new THREE.MeshStandardMaterial({
+    color: 0x08203e,
+    emissive: 0x0e3a6a,
+    emissiveIntensity: 0.18,
+    roughness: 0.55,
+    metalness: 0.28,
+  });
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(80, 86, 1, 1), seaMat);
+  sea.rotation.x = -Math.PI / 2;
+  sea.position.y = -0.15;
+  scene.add(sea);
+
+  // Subtle second sea layer for depth shimmer
+  const sea2Mat = new THREE.MeshStandardMaterial({
+    color: 0x0d3060,
+    emissive: 0x1560a0,
+    emissiveIntensity: 0.06,
+    roughness: 0.3,
+    metalness: 0.5,
+    transparent: true,
+    opacity: 0.22,
+  });
+  const sea2 = new THREE.Mesh(new THREE.PlaneGeometry(76, 82, 1, 1), sea2Mat);
+  sea2.rotation.x = -Math.PI / 2;
+  sea2.position.y = 0.04;
+  scene.add(sea2);
+
+  // --- Land fill polygons (semi-transparent terrain) ---
+  const rings = OUTLINE.rings || [];
+  rings.forEach(function(ring) {
+    if (!ring || ring.length < 3) return;
+
+    // Filled land patch
+    try {
+      const shape = new THREE.Shape();
+      const first = project(ring[0][1], ring[0][0]);
+      shape.moveTo(first[0], first[1]);
+      for (var i = 1; i < ring.length; i++) {
+        const p = project(ring[i][1], ring[i][0]);
+        shape.lineTo(p[0], p[1]);
+      }
+      shape.closePath();
+      const geom2d = new THREE.ShapeGeometry(shape);
+      const fillMat = new THREE.MeshStandardMaterial({
+        color: 0x1a4a3a,
+        emissive: 0x0d2d22,
+        emissiveIntensity: 0.12,
+        roughness: 0.88,
+        metalness: 0.04,
+        transparent: true,
+        opacity: 0.72,
+        side: THREE.DoubleSide,
+      });
+      const fillMesh = new THREE.Mesh(geom2d, fillMat);
+      fillMesh.rotation.x = -Math.PI / 2;
+      fillMesh.position.y = 0.01;
+      scene.add(fillMesh);
+    } catch (e2) {}
+
+    // Coastline outline on top
+    const pts = [];
+    ring.forEach(function(c) {
+      const xy = project(c[1], c[0]);
+      pts.push(xy[0], 0.08, xy[1]);
+    });
+    const lineGeom = new THREE.BufferGeometry();
+    lineGeom.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    scene.add(new THREE.LineLoop(lineGeom,
+      new THREE.LineBasicMaterial({ color: 0x8fc4a8, transparent: true, opacity: 0.75 })
+    ));
+  });
+
+  // --- Subtle coordinate grid ---
+  const grid = new THREE.GridHelper(80, 10, 0x1a3a5c, 0x0e2240);
+  grid.position.y = 0.03;
+  var gm = grid.material;
+  (Array.isArray(gm) ? gm : [gm]).forEach(function(m) {
+    m.transparent = true; m.opacity = 0.18;
+  });
+  scene.add(grid);
+
+  // --- Data bars ---
+  const valid = RUNS.filter(function(r) {
+    return r.lat != null && r.lon != null && !isNaN(r.lat) && !isNaN(r.lon);
+  });
+
+  function density01(r, maxD) {
+    var newN = Math.max(0, r.new_observations || 0);
+    var rad = Math.max(10, Math.min(200, r.search_radius_miles || 75));
+    var d = newN / (Math.PI * rad * rad + 1e-9);
+    return maxD > 0 ? Math.min(1, d / maxD) : 0;
+  }
+
+  function heatColor(t) {
+    // Cool blue (low) → warm amber-green (high), Apple Maps palette
+    var c = new THREE.Color();
+    c.setHSL(0.58 - 0.48 * t, 0.85, 0.46 + 0.14 * t);
+    return c;
+  }
+
+  var maxDens = 0;
+  valid.forEach(function(r) {
+    var rad = Math.max(10, Math.min(200, r.search_radius_miles || 75));
+    var d = (r.new_observations || 0) / (Math.PI * rad * rad + 1e-9);
+    if (d > maxDens) maxDens = d;
+  });
+  var maxLog = Math.max.apply(null, valid.map(function(v) {
+    return Math.log1p(v.new_observations || 0);
+  })) || 1e-6;
+
+  valid.forEach(function(r) {
+    var xy = project(r.lat, r.lon);
+    var x = xy[0], z = xy[1];
+    var tD = density01(r, maxDens);
+    var col = heatColor(tD);
+    var radiusMi = Math.max(10, Math.min(200, r.search_radius_miles || 75));
+    var diskR = Math.max(0.5, Math.min(4.2, radiusMi / 75 * 2.4));
+
+    // Search radius disk
+    var diskMat = new THREE.MeshStandardMaterial({
+      color: col.clone().multiplyScalar(0.6),
+      transparent: true, opacity: 0.28,
+      metalness: 0.1, roughness: 0.7,
+      emissive: col.clone().multiplyScalar(0.08),
+    });
+    var disk = new THREE.Mesh(new THREE.CylinderGeometry(diskR, diskR, 0.06, 56), diskMat);
+    disk.position.set(x, 0.1, z);
+    scene.add(disk);
+
+    // Main bar (tapered cylinder — Apple Maps pin aesthetic)
+    var logNew = Math.log1p(r.new_observations || 0);
+    var h = Math.max(0.6, Math.min(18, 0.6 + (logNew / maxLog) * 17));
+    var pillarMat = new THREE.MeshStandardMaterial({
+      color: col,
+      emissive: col.clone().multiplyScalar(0.4),
+      metalness: 0.55,
+      roughness: 0.28,
+    });
+    var pillar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.28, 0.48, h, 32),
+      pillarMat
+    );
+    pillar.position.set(x, h * 0.5 + 0.12, z);
+    scene.add(pillar);
+
+    // Glowing cap sphere on top (Apple Maps pin style)
+    var capCol = col.clone();
+    capCol.multiplyScalar(1.3);
+    var capMat = new THREE.MeshStandardMaterial({
+      color: capCol,
+      emissive: capCol,
+      emissiveIntensity: 0.85,
+      metalness: 0.6,
+      roughness: 0.1,
+    });
+    var cap = new THREE.Mesh(new THREE.SphereGeometry(0.44, 20, 20), capMat);
+    cap.position.set(x, h + 0.4, z);
+    scene.add(cap);
+  });
+
+  if (valid.length === 0 && RUNS.length > 0) {
+    if (hostEl) {
+      var note = document.createElement('p');
+      note.className = 'stats-map-coords-msg';
+      note.setAttribute('role', 'status');
+      note.textContent = 'No geocoded coordinates yet. Run the pipeline once with a valid UK postcode to populate the map.';
+      hostEl.appendChild(note);
+    }
+  }
+
+  var controls = null;
+  if (typeof THREE.OrbitControls === 'function') {
+    controls = new THREE.OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.target.set(5, 3, 6);
+    controls.minDistance = 22;
+    controls.maxDistance = 140;
+    controls.minPolarAngle = 0.2;
+    controls.maxPolarAngle = Math.PI * 0.48;
+  } else {
+    camera.lookAt(5, 3, 6);
+  }
+
+  function resizeRenderer() {
+    var w = mapWidth();
+    canvas.width = w;
+    canvas.height = H;
+    camera.aspect = w / H;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, H);
+  }
+  resizeRenderer();
+
+  var clock = 0;
+  function tick() {
+    requestAnimationFrame(tick);
+    clock += 0.008;
+    // Animate sea shimmer
+    seaMat.emissiveIntensity = 0.14 + Math.sin(clock) * 0.06;
+    sea2Mat.opacity = 0.18 + Math.sin(clock * 0.7 + 1) * 0.06;
+    if (controls) controls.update();
+    renderer.render(scene, camera);
+  }
+  tick();
+
+  window.addEventListener('resize', resizeRenderer);
+  if (typeof ResizeObserver !== 'undefined' && hostEl) {
+    var ro = new ResizeObserver(function() { resizeRenderer(); });
+    ro.observe(hostEl);
+  }
+  var det = document.querySelector('.stats-map-details');
+  if (det) det.addEventListener('toggle', function() { resizeRenderer(); });
+  } catch (e) {
+    if (hostEl) {
+      hostEl.innerHTML = '<p class="stats-map-coords-msg" role="alert">3D map failed to initialise. Check browser WebGL, allow <code>unpkg.com</code>/<code>jsdelivr</code>/<code>cdnjs.cloudflare.com</code>, or open <code>reports/uk_stats_map.html</code>.<br><small style="opacity:.85">' + String(e && e.message ? e.message : e) + '</small></p>';
+    }
+  }
+};
+  </script>
+  <div class="stats-map-table-wrap">
+    <table class="stats-map-table">
+      <thead><tr>
+        <th>When</th><th>Postcode</th><th>Radius (mi)</th>
+        <th>New obs</th><th>Repeat obs</th>
+      </tr></thead>
+      <tbody>
+"""
+    tail = """      </tbody>
+    </table>
+  </div>
+</details>"""
+    return head + safe_payload + mid_outline + safe_outline + mid + tbody_html + tail
+
+
+def _uk_stats_map_table_row(r: Dict[str, Any]) -> str:
+    when = html_lib.escape(str(r.get("run_at", ""))[:16])
+    pc = html_lib.escape(str(r.get("buyer_postcode", "")))
+    rad = int(r.get("search_radius_miles") or 0)
+    new_n = int(r.get("new_observations") or 0)
+    rep = int(r.get("repeat_observations") or 0)
+    return (
+        f"<tr><td>{when}</td><td>{pc}</td><td>{rad}</td>"
+        f"<td><strong style='color:#22c55e'>{new_n}</strong></td>"
+        f"<td style='color:var(--dim)'>{rep}</td></tr>"
+    )
+
+
+def write_uk_stats_map_page(conn, path: Optional[Path] = None) -> str:
+    """
+    Write a standalone HTML page for the UK stats board (same visuals as the report).
+    Returns the written path as a string.
+    """
+    from dealerly.db import list_pipeline_runs
+
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    out = path or UK_STATS_MAP_HTML
+    runs = list_pipeline_runs(conn)
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+    inner = _uk_stats_map_section_html(runs)
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dealerly — UK stats board</title>
+  <style>{_CSS}</style>
+  <script>
+    (function(){{
+      const s = localStorage.getItem('dealerly_theme');
+      document.documentElement.setAttribute('data-theme', s || 'dark');
+    }})();
+  </script>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="page-header">
+      <h1>Dealerly {VERSION} — UK stats board</h1>
+      <button class="dark-toggle" id="dark-btn" onclick="toggleDark()">\u263e Dark</button>
+    </div>
+    <p class="meta">{html_lib.escape(ts)} — Runs recorded: {len(runs)}</p>
+    {inner}
+    <div class="footer">Dealerly — location and radius from each pipeline run · estimates only.{_footer_logos_html()}</div>
+  </div>
+  <script>{_JS}</script>
+</body>
+</html>"""
+    out.write_text(html, encoding="utf-8")
+    return str(out)
+
+
+# ---------------------------------------------------------------------------
+# Main report generator
+# ---------------------------------------------------------------------------
+
+def generate_html_report(
+    rows, near_miss, *, capital, price_min, price_max, mode,
+    target_margin, stats, platforms, at_used,
+    avoid_rows=None, enrich_stats=None, platform_results=None,
+    basket_item_ids=None, basket_budget=0.0, basket_spend=0.0, basket_profit=0.0,
+    runtime_banner: str = "",
+    seen_map: dict | None = None,
+    pipeline_runs: List[Dict[str, Any]] | None = None,
+):
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+    report_path = REPORTS_DIR / f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+    runtime_banner_html = ""
+    if (runtime_banner or "").strip():
+        runtime_banner_html = (
+            f'<p class="runtime-banner">{html_lib.escape(runtime_banner.strip())}</p>\n'
+        )
+
+    # ---- Stat cards ----
+    all_disp   = list(rows) + list(near_miss or []) + list(avoid_rows or [])
+    vrm_top    = sum(1 for l, _, _ in rows if l.vrm)
+    dvsa_top   = sum(1 for l, _, _ in rows if l.mot_history)
+    vrm_all    = sum(1 for l, _, _ in all_disp if l.vrm)
+    dvsa_all   = sum(1 for l, _, _ in all_disp if l.mot_history)
+    n_top      = len(rows)
+    n_all      = len(all_disp)
+    top_plat_counts: Dict[str, int] = {}
+    for l, _, _ in rows:
+        key = (l.platform or "unknown").lower()
+        top_plat_counts[key] = top_plat_counts.get(key, 0) + 1
+    plat_mix = " | ".join(
+        f"{_platform_mix_label(k)}:{v}"
+        for k, v in sorted(top_plat_counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    ) if top_plat_counts else "n/a"
+    basket_ids = set(basket_item_ids or [])
+    basket_count = sum(1 for l, _, _ in rows if l.item_id in basket_ids)
+
+    enrich_card_html = ""
+    if enrich_stats and enrich_stats.get("enriched_total", 0) > 0:
+        et = enrich_stats["enriched_total"] + enrich_stats.get("enriched_p45", 0)
+        ef = enrich_stats.get("vrm_found_p3", 0) + enrich_stats.get("vrm_found_p45", 0)
+        enrich_card_html = (
+            f'<div class="stat-card"><div class="sv" style="color:#7c3aed">'
+            f'{ef}/{et}</div><div class="sl">VRM enriched</div></div>'
+        )
+
+    # Build Sources string — show active platforms normally, zero-result (blocked)
+    # platforms as a yellow warning badge so it's clear they were attempted.
+    if platform_results:
+        active_plats  = sorted(p for p, n in platform_results.items() if n > 0)
+        blocked_plats = sorted(p for p, n in platform_results.items() if n == 0)
+        plat_str = " + ".join(_platform_source_label(p) for p in active_plats) if active_plats else "eBay"
+        for p in blocked_plats:
+            plat_str += (
+                f' <span style="background:#fef3c7;color:#92400e;padding:2px 7px;'
+                f'border-radius:8px;font-size:.78em" title="0 listings — blocked or empty">'
+                f'⚠ {_platform_source_label(p)}</span>'
+            )
+    else:
+        plat_str = " + ".join(sorted({_platform_source_label(p) for p in platforms})) or "eBay"
+    at_badge = (
+        ' <span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;'
+        'border-radius:8px;font-size:.78em">AutoTrader</span>'
+        if at_used else ""
+    )
+
+    stat_html = (
+        f'<div class="stat-grid">'
+        f'<div class="stat-card"><div class="sv" style="color:#22c55e">{stats.get("buy",0)}</div>'
+        f'<div class="sl">BUY</div></div>'
+        f'<div class="stat-card"><div class="sv" style="color:#f59e0b">{stats.get("offer",0)}</div>'
+        f'<div class="sl">OFFER</div></div>'
+        f'<div class="stat-card"><div class="sv" style="color:#94a3b8">{stats.get("pass",0)}</div>'
+        f'<div class="sl">PASS</div></div>'
+        f'<div class="stat-card"><div class="sv" style="color:#ef4444">{stats.get("avoid_shock",0)}</div>'
+        f'<div class="sl">AVOID</div></div>'
+        f'<div class="stat-card"><div class="sv">{stats.get("total",0)}</div>'
+        f'<div class="sl">Scored</div></div>'
+        f'<div class="stat-card"><div class="sv" style="color:#0369a1">'
+        f'{vrm_top}/{n_top} VRM \u00b7 {dvsa_top}/{n_top} MOT'
+        f'</div><div class="sl">Top-pool verified</div></div>'
+        f'{enrich_card_html}'
+        f'</div>'
+    )
+
+    stats_map_html = ""
+    if pipeline_runs is not None:
+        stats_map_html = _uk_stats_map_section_html(pipeline_runs)
+
+    # ---- Seen-map (Sprint 9) — must be set before any _card_html call ----
+    _sm = seen_map or {}
+
+    # ---- Top-3 comparison strip ----
+    top3_cands = [(l, d, o) for l, d, o in rows if o.decision in ("BUY", "OFFER")][:3]
+    top3_html = ""
+    if top3_cands:
+        cards_str = "\n".join(
+            _card_html(i + 1, l, d, o, target_margin, featured=True, id_suffix="f",
+                       seen_info=_sm.get(l.item_id))
+            for i, (l, d, o) in enumerate(top3_cands)
+        )
+        top3_html = (
+            f'<div class="section-title">'
+            f'Top {len(top3_cands)} Opportunities</div>'
+            f'<div class="top3-grid">{cards_str}</div>'
+        )
+    elif near_miss:
+        # No pure BUY/OFFER this run — surface best near-misses in Act Now
+        # so there's always something actionable at the top of the report.
+        nm_featured = near_miss[:3]
+        nm_cards_str = "\n".join(
+            _card_html(i + 1, l, d, o, target_margin, featured=True, id_suffix="f",
+                       seen_info=_sm.get(l.item_id))
+            for i, (l, d, o) in enumerate(nm_featured)
+        )
+        _disc_pct = lambda x: int((1 - x[2].max_bid / x[0].price_gbp) * 100)
+        _best_disc = _disc_pct(nm_featured[0])
+        top3_html = (
+            f'<div class="section-title">'
+            f'Top {len(nm_featured)} Negotiation Opportunities'
+            f'<small style="font-weight:400;color:var(--dim);font-size:.82em">'
+            f' \u2014 offer at max bid (~{_best_disc}% below asking) to unlock profit'
+            f'</small></div>'
+            f'<div class="top3-grid">{nm_cards_str}</div>'
+        )
+
+    has_featured_top = bool(top3_html)
+
+    # ---- Filter bar ----
+    plat_options = sorted({l.platform for l, _, _ in rows})
+    plat_btns = "".join(_platform_filter_button_html(p) for p in plat_options)
+    plat_group = ""
+    if len(plat_options) > 1:
+        plat_group = (
+            f'<div class="filter-group">'
+            f'<span class="filter-label">Platform</span>'
+            f'<button class="fbtn active" data-v="ALL" '
+            f"onclick=\"setFilter('plat','ALL',this)\">All</button>"
+            f"{plat_btns}</div>"
+        )
+
+    filter_bar_html = (
+        f'<div class="filter-bar">'
+        f'<div class="filter-group">'
+        f'<span class="filter-label">Decision</span>'
+        f'<button class="fbtn active" data-v="ALL" onclick="setFilter(\'dec\',\'ALL\',this)">All</button>'
+        f'<button class="fbtn" data-v="BUY"   onclick="setFilter(\'dec\',\'BUY\',this)">BUY</button>'
+        f'<button class="fbtn" data-v="OFFER" onclick="setFilter(\'dec\',\'OFFER\',this)">OFFER</button>'
+        f'<button class="fbtn" data-v="PASS"  onclick="setFilter(\'dec\',\'PASS\',this)">PASS</button>'
+        f'</div>'
+        f'{plat_group}'
+        f'<div class="filter-group">'
+        f'<span class="filter-label">ULEZ</span>'
+        f'<button class="fbtn active" data-v="ALL" onclick="setFilter(\'ulez\',\'ALL\',this)">All</button>'
+        f'<button class="fbtn" data-v="yes" onclick="setFilter(\'ulez\',\'yes\',this)">\u2713 ULEZ</button>'
+        f'<button class="fbtn" data-v="no"  onclick="setFilter(\'ulez\',\'no\',this)">Fail</button>'
+        f'</div>'
+        f'<div class="filter-group">'
+        f'<span class="filter-label">VRM</span>'
+        f'<button class="fbtn active" data-v="ALL" onclick="setFilter(\'vrm\',\'ALL\',this)">All</button>'
+        f'<button class="fbtn" data-v="yes" onclick="setFilter(\'vrm\',\'yes\',this)">Found</button>'
+        f'<button class="fbtn" data-v="no"  onclick="setFilter(\'vrm\',\'no\',this)">Missing</button>'
+        f'</div>'
+        f'<div class="filter-group">'
+        f'<span class="filter-label">Type</span>'
+        f'<button class="fbtn active" data-v="ALL" onclick="setFilter(\'auction\',\'ALL\',this)">All</button>'
+        f'<button class="fbtn" data-v="yes" onclick="setFilter(\'auction\',\'yes\',this)">\U0001F528 Auction</button>'
+        f'<button class="fbtn" data-v="no"  onclick="setFilter(\'auction\',\'no\',this)">Buy Now</button>'
+        f'</div>'
+        f'<div class="filter-group">'
+        f'<span class="filter-label">Profit \u00a3</span>'
+        f'<div class="profit-range">'
+        f'<input type="number" id="prof-min" placeholder="min" oninput="setProfitRange()">'
+        f'<span style="color:var(--dim)">\u2013</span>'
+        f'<input type="number" id="prof-max" placeholder="max" oninput="setProfitRange()">'
+        f'</div></div>'
+        f'<div class="filter-group">'
+        f'<span class="filter-label">Sort</span>'
+        f'<select class="sort-sel" onchange="setSort(this)">'
+        f'<option value="profit_desc">Profit \u2193</option>'
+        f'<option value="profit_asc">Profit \u2191</option>'
+        f'<option value="price_asc">Price \u2191</option>'
+        f'<option value="price_desc">Price \u2193</option>'
+        f'<option value="pmot_desc">p_MOT \u2193</option>'
+        f'</select></div>'
+        f'<span id="cart-summary" data-budget="{capital:.0f}" style="font-size:.8em;color:var(--dim);min-width:220px"></span>'
+        f'<button class="cart-open" id="cart-open-btn" type="button" onclick="toggleCartPanel()">Open cart (0)</button>'
+        f'<button class="cart-clear" type="button" onclick="clearCart()">Clear cart</button>'
+        f'<span id="result-count" style="font-size:.8em;color:var(--dim);margin-left:auto"></span>'
+        f'</div>'
+    )
+
+    # ---- Main card grid ----
+    main_cards = "\n".join(
+        _card_html(i, l, d, o, target_margin,
+                   basket_selected=(l.item_id in basket_ids),
+                   seen_info=_sm.get(l.item_id))
+        for i, (l, d, o) in enumerate(rows, 1)
+    )
+    basket_strip = ""
+    if basket_ids:
+        basket_strip = (
+            f'<div class="section-title">Basket Plan '
+            f'<span style="color:var(--dim);font-weight:400;font-size:.85em">'
+            f'(\u00a3{basket_spend:.0f} spend \u00b7 \u00a3{max(0.0, basket_budget-basket_spend):.0f} left '
+            f'\u00b7 ~\u00a3{basket_profit:.0f} projected profit)</span></div>'
+        )
+    _main_lead = ""
+    if has_featured_top:
+        _main_lead = (
+            '<p class="section-lead">Strong picks are highlighted above &mdash; the full scored grid '
+            "below still holds more opportunities (use filters and sort).</p>"
+        )
+    _main_wrap_open = f'<div class="main-grid-section{" has-top-strip" if has_featured_top else ""}">'
+    main_grid_html = (
+        f"{_main_wrap_open}"
+        f"{basket_strip}"
+        f'<div class="section-title">All listings (scored) '
+        f'<span style="color:var(--dim);font-weight:400;font-size:.85em">({len(rows)})</span></div>'
+        f"{_main_lead}"
+        f"{filter_bar_html}"
+        f'<div class="cart-panel hidden" id="cart-panel">'
+        f'<div class="cart-panel-title">Cart review</div>'
+        f'<div class="cart-panel-empty" id="cart-panel-empty">No listings selected yet.</div>'
+        f'<div class="cart-panel-list" id="cart-panel-list"></div>'
+        f"</div>"
+        f'<div class="card-grid" id="main-grid">{main_cards}</div>'
+        f"</div>"
+    )
+
+    # ---- Near-miss ----
+    near_miss_html = ""
+    if near_miss:
+        nm_cards = "\n".join(
+            _card_html(i, l, d, o, target_margin, compact=True,
+                       seen_info=_sm.get(l.item_id))
+            for i, (l, d, o) in enumerate(near_miss, 1)
+        )
+        near_miss_html = (
+            f'<div class="section-title">Near-Miss \u2014 Worth Negotiating '
+            f'<span style="color:var(--dim);font-weight:400;font-size:.85em">'
+            f'(listed just above your max bid)</span></div>'
+            f'<div class="nearmiss-grid">{nm_cards}</div>'
+        )
+
+    # ---- AVOID ----
+    avoid_html = ""
+    if avoid_rows:
+        av_cards = "\n".join(
+            _card_html(i, l, d, o, target_margin, compact=True,
+                       seen_info=_sm.get(l.item_id))
+            for i, (l, d, o) in enumerate(avoid_rows, 1)
+        )
+        avoid_html = (
+            f'<details>'
+            f'<summary class="avoid-toggle">'
+            f'Review Recommended ({len(avoid_rows)} listings) \u2014 click to expand'
+            f'</summary>'
+            f'<p style="font-size:.85em;color:#7a4f10;margin:8px 0">'
+            f'These listings need a second look (verification gaps, stronger risk signals, or margin pressure). '
+            f'Use this section as a manual review queue before bidding.</p>'
+            f'<div class="nearmiss-grid">{av_cards}</div>'
+            f'</details>'
+        )
+
+    # ---- Assemble ----
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dealerly {VERSION} \u2014 {ts}</title>
+  <style>{_CSS}</style>
+  <script>
+    /* Apply saved/preferred theme before first paint (avoids flash) */
+    (function(){{
+      const s = localStorage.getItem('dealerly_theme');
+      document.documentElement.setAttribute('data-theme', s || 'dark');
+      const d = localStorage.getItem('dealerly_density') || 'comfortable';
+      document.addEventListener('DOMContentLoaded', () => {{
+        document.body.setAttribute('data-density', d);
+      }});
+    }})();
+  </script>
+</head>
+<body>
+  <div class="app-shell">
+  <div class="page-header">
+    <h1><strong>Dealerly</strong> &nbsp;{VERSION}</h1>
+    <div class="header-actions">
+      <button class="dark-toggle" id="density-btn" onclick="toggleDensity()">Dense</button>
+      <button class="dark-toggle" onclick="printReport()">Print</button>
+      <button class="dark-toggle" id="dark-btn" onclick="toggleDark()">Dark</button>
+    </div>
+  </div>
+  <p class="meta">{html_lib.escape(ts)} &nbsp;&middot;&nbsp; \u00a3{capital:.0f} capital &nbsp;&middot;&nbsp; \u00a3{price_min}&ndash;\u00a3{price_max} &nbsp;&middot;&nbsp; {html_lib.escape(mode)} &nbsp;&middot;&nbsp; {plat_str}{at_badge}</p>
+  {stat_html}
+  {top3_html}
+  {main_grid_html}
+  {near_miss_html}
+  {avoid_html}
+  {stats_map_html}
+  <div class="footer">
+    Dealerly {VERSION} \u2014 SWAutos &nbsp;|&nbsp;
+    Estimates only. Always verify before bidding.
+    {_footer_logos_html()}
+  </div>
+  </div>
+  <script>{_JS}</script>
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {{
+      const density = localStorage.getItem('dealerly_density') || 'comfortable';
+      document.body.setAttribute('data-density', density);
+      const densBtn = document.getElementById('density-btn');
+      if (densBtn) densBtn.textContent = density === 'dense' ? 'Comfortable View' : 'Dense View';
+      _renderCartButtons();
+      _renderCartSummary();
+      applyFilters();
+      const theme = document.documentElement.getAttribute('data-theme');
+      const btn = document.getElementById('dark-btn');
+      if (btn) btn.textContent = theme === 'dark' ? '\u2600 Light' : '\u263e Dark';
+    }});
+  </script>
+</body>
+</html>"""
+
+    report_path.write_text(html, encoding="utf-8")
+    return str(report_path)
+
+
+# ---------------------------------------------------------------------------
+# Console report — unchanged from v0.9.4
+# ---------------------------------------------------------------------------
+
+def print_report(rows, *, capital, price_min, price_max, mode,
+                 target_margin, holding_cost, ebay_fee_rate, pay_fee_rate,
+                 admin_buffer, transport_buffer,
+                 basket_rows=None, basket_spend: float = 0.0, basket_profit: float = 0.0):
+    print(f"\n=== Dealerly {VERSION} \u2014 SWAutos Flip Opportunities ===")
+    print(datetime.now().strftime("%Y-%m-%d %H:%M"))
+    print(f"Mode: {mode}")
+    print(f"Capital: \u00a3{capital:.0f} | Margin target: \u00a3{target_margin:.0f} | Holding: \u00a3{holding_cost:.0f}")
+    print(f"Band: \u00a3{price_min}\u2013\u00a3{price_max}")
+    if basket_rows:
+        print(
+            f"Budget basket: {len(basket_rows)} car(s) | spend \u00a3{basket_spend:.0f} "
+            f"| projected profit \u00a3{basket_profit:.0f} | cash left \u00a3{max(0.0, capital-basket_spend):.0f}"
+        )
+    print("-" * 50)
+
+    if not rows:
+        print("No candidates returned.")
+        return
+
+    for i, (listing, deal, out) in enumerate(rows, 1):
+        ulez = (
+            " [ULEZ OK]" if listing.ulez_compliant
+            else (" [ULEZ FAIL]" if listing.ulez_compliant is False else "")
+        )
+        print(f"\n{i}. {console_safe(listing.title[:90])}{ulez}")
+        print(f"   Buy: \u00a3{listing.price_gbp:.0f} | Resale: \u00a3{deal.expected_resale:.0f} | Profit: \u00a3{out.expected_profit:.0f}")
+        repair_note = f" | {console_safe(deal.repair_profile_notes[:60])}" if deal.repair_profile_notes else ""
+        print(f"   Repairs: \u00a3{deal.base_repair_estimate:.0f}\u2013\u00a3{deal.worst_case_repair:.0f}{repair_note}")
+        print(f"   Max bid: \u00a3{out.max_bid:.0f} | Shock: {out.shock_impact_ratio:.2f} | p_mot={out.p_mot:.0%}")
+        print(f"   Decision: {out.decision} -- {console_safe(out.reason)}")
+        if out.decision == "OFFER":
+            print(f"   >>> Offer: \u00a3{max(0.0, out.max_bid):.0f}")
+        if is_vrm_displayable(listing.vrm, listing.vrm_confidence):
+            vrm_line = f"{listing.vrm} [{listing.vrm_source} {listing.vrm_confidence:.0%}]"
+        else:
+            vrm_line = "no VRM"
+        print(f"   VRM: {vrm_line} | {listing.url[:80]}")
+
+
+# ---------------------------------------------------------------------------
+# Deal log CSV — unchanged
+# ---------------------------------------------------------------------------
+
+def append_deal_log(rows, log_path=DEAL_LOG_PATH):
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    header = (
+        "timestamp,platform,item_id,title,vrm,vrm_source,vrm_confidence,"
+        "buy_price,expected_resale,base_repair,worst_repair,fees_total,"
+        "expected_profit,max_bid,shock_ratio,velocity,decision,ulez,url\n"
+    )
+    write_header = not log_path.exists() or log_path.stat().st_size == 0
+
+    with log_path.open("a", encoding="utf-8") as f:
+        if write_header:
+            f.write(header)
+        ts = now_utc_iso()
+        for listing, deal, out in rows:
+            ulez = (
+                "yes" if listing.ulez_compliant
+                else ("no" if listing.ulez_compliant is False else "?")
+            )
+            safe_title = listing.title.replace(",", ";").replace("\n", " ")[:80]
+            f.write(
+                f"{ts},{listing.platform},{listing.item_id},{safe_title},"
+                f"{listing.vrm},{listing.vrm_source},{listing.vrm_confidence:.2f},"
+                f"{listing.price_gbp:.0f},{deal.expected_resale:.0f},"
+                f"{deal.base_repair_estimate:.0f},{deal.worst_case_repair:.0f},{deal.fees_total:.0f},"
+                f"{out.expected_profit:.0f},{out.max_bid:.0f},{out.shock_impact_ratio:.2f},"
+                f"{out.velocity_score:.1f},{out.decision},{ulez},{listing.url}\n"
+            )

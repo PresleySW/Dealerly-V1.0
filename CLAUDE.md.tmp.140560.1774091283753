@@ -15,7 +15,7 @@ v1.0.0-rc.1
 * **Logging:** Use `--debug` JSON logging for all API calls (DVSA, Plate Recognizer). Do not clutter stdout.
 * **File Edits:** Do not rewrite entire files. Use surgical diffs via Oh My Claude. Run Impeccable for linting after edits.
 
-## Key modules (20 files)
+## Key modules (19 files)
 ### Pipeline & orchestration
 - `pipeline.py` — 7-phase orchestration (gather → score → enrich → rescore → offers → analytics → workflow)
 - `cli.py` — CLI entry point, flags (`--mode`, `--debug`, `--vrm-lookup`, `--watchlist`, `--log-trade`, `--trades`)

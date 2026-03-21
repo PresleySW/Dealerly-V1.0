@@ -1,0 +1,340 @@
+## Status: Sprint 17 CLOSED — v1.0.0-rc.1 · Pipeline accuracy fixes (mileage, AutoTrader, PistonHeads)
+
+### Sprint 17 (2026-03-21) — Pipeline accuracy
+
+Four root-cause fixes from analysis of the 2026-03-21 11:36 pipeline run.
+
+#### Root causes fixed
+1. **AutoTrader always OFF** (`cli.py`): `result.get("use_autotrader", "") == "1"` — empty-string default meant AT was never used unless the web config checkbox was explicitly ticked. Fixed to `result.get("use_autotrader", "1") != "0"` (on by default).
+2. **eBay mileage title-only** (`ebay.py`): `normalise_ebay_items()` used `guess.mileage` (title-parse only). Changed to `mileage_from_item(item) or guess.mileage` — reads structured `itemSpecifics` (odometer fields) first.
+3. **PistonHeads HTTP 500** (`pistonheads.py`): `_fetch_query()` sent `search=ford+fiesta` AND `make=Ford&model=Fiesta` simultaneously — server rejected the conflict. Fixed: `search` param removed when `make`/`model` are present; `search` used only as fallback for unparseable queries.
+4. **Phase 1 mileage miss on non-eBay** (`pipeline.py`): Lightweight mileage-inference pass only scanned eBay-specific field names (`shortDescription`, `itemDescription`). Fixed: for non-eBay platforms, all string values in `listing.raw` are now included in the scan text.
+
+#### Files changed
+- `dealerly/cli.py` — AutoTrader default-on fix (line ~523)
+- `dealerly/ebay.py` — `mileage_from_item(item) or guess.mileage` in `normalise_ebay_items()`
+- `dealerly/pistonheads.py` — `_fetch_query()`: remove `search` param when make/model available
+- `dealerly/pipeline.py` — Phase 1 mileage inference: generic raw-string scan for non-eBay platforms
+
+#### Compile validation
+- `python -m compileall dealerly/ -q` → all files clean, exit 0.
+
+---
+
+## Status: Sprint 16 CLOSED — v1.0.0-rc.1 · Dealerly Agent Loop (adaptive Claude-driven Phase 1)
+
+### Sprint 16 (2026-03-21) — Agent Architecture
+
+Implemented the full observe → think → act → update → repeat agent loop described in the "You're running into a very common Claude Code misconception" instruction.
+
+#### Architecture (3 layers)
+- **Tool layer** (`agent.py`): `_tool_search()`, `_tool_score()`, `_tool_finish()` — thin wrappers around adapters + lightweight heuristics.
+- **Agent loop** (`agent.py`): `run_dealerly_agent()` — up to 10 observe-think-act cycles; prints reasoning at each step.
+- **Model layer** (`agent.py`): `_call_claude_action()` — sends state JSON to Claude (or OpenAI fallback via `offers.py`); deterministic `_fallback_decision()` when no API key.
+
+#### Actions (minimal viable: 3)
+- `"search"` — calls all enabled adapters with agent-specified queries/price band/pages; deduplicates into state.
+- `"score"`  — lightweight price-band heuristic (no DB/comps); counts potential buy/offer signals so Claude can decide whether to keep searching.
+- `"finish"` — accepts current listing pool; hands off to Phase 2+.
+
+#### Files changed
+- **`dealerly/agent.py`** (new): `AgentState` dataclass, tool layer, model layer, `run_dealerly_agent()`.
+- **`dealerly/config.py`**: `agent_mode: bool = False` added to `Config` dataclass.
+- **`dealerly/pipeline.py`**: `if cfg.agent_mode:` branch before Phase 1 concurrent block — calls `run_dealerly_agent()` and sets `listings` from result; existing Phase 1 path unchanged for `agent_mode=False`.
+- **`dealerly/cli.py`**: `--agent` flag sets `cfg.agent_mode = True` via `dc_replace`.
+
+#### Usage
+```
+python -m dealerly --agent
+```
+Claude observes listing count + price distribution, decides queries/price bands, and calls search/score/finish in a loop. Prints step-by-step reasoning. Phase 2–7 run unchanged on the agent-gathered pool.
+
+#### Compile validation
+- `python -m compileall dealerly -f` → all files clean, exit 0.
+
+---
+
+## Status: Sprint 15 CLOSED — v1.0.0-rc.1 · Auction detection, PistonHeads adapter, Phase 1 concurrency, ULEZ text fix
+
+### Sprint 15 (2026-03-21) — Performance + Sources + Auction Intelligence
+
+#### Auction detection (all platforms)
+- **`models.py`:** `is_auction: bool = False` added to `Listing` dataclass.
+- **`ebay.py`:** `buyingOptions` field read in `normalise_ebay_items()`; `is_auction=True` when `"AUCTION" in buying_opts and "FIXED_PRICE" not in buying_opts`.
+- **`pistonheads.py`:** `saleType`/`listingType`/`type` fields checked in `_item_to_listing()`.
+- **`report.py`:** Amber `🔨 Auction` badge on cards; `border-left: 3px solid #f59e0b` on auction cards; "Type" filter group (All / Auction / Buy Now); `data-auction` attribute on card `<div>`.
+
+#### ULEZ text-based detection
+- **`vrm.py`:** `detect_ulez_from_text(text) -> Optional[bool]` added; scans title + description for explicit ULEZ compliance/non-compliance phrases; overrides year+fuel inference.
+- **`pipeline.py`:** `_resolve_ulez(listing)` helper — applies year+fuel first, then text override. Replaces all 3 raw `is_ulez_compliant(...)` assignment sites.
+- **`ebay.py` + `ingestion.py`:** `detect_ulez_from_text` applied at Phase 1 Listing creation — catches ULEZ flags in titles before pipeline enrichment.
+
+#### Phase 1 concurrency (2× speedup)
+- **`pipeline.py`:** `ThreadPoolExecutor(max_workers=4)` runs all platform adapters concurrently. Expected Phase 1 wall-clock: ~200s → ~70-80s.
+- **`ingestion.py`:** `EbayIngestionAdapter.fetch_listings()` parallelises per-query eBay fetches with `ThreadPoolExecutor(max_workers=3)`.
+
+#### PistonHeads adapter (new platform)
+- **`pistonheads.py`:** New `PistonHeadsAdapter(BaseIngestionAdapter)` — three-tier parse (`__NEXT_DATA__` JSON → `application/json` script blocks → BeautifulSoup HTML). Polite 1.5s inter-page sleep. Stops after 2 low-signal pages. Auction detection from `saleType`/`listingType`. Text-ULEZ applied.
+- **`config.py`:** `"pistonheads"` added to `ENABLED_PLATFORMS`.
+- **`pipeline.py`:** `PistonHeadsAdapter` imported; `"pistonheads"` wired into `_build_adapter_list()`.
+
+#### Loading screen redesign
+- **`report.py`:** `write_loading_screen()` rewritten with 9 phase milestone chips (Init, Gather, Score, Enrich, Final, Offers, Analytics, Workflow, Report). `gap: 22px 28px` between chips. Active/done/pending states with blue-glow pulse animation. Shell width `min(720px, 94vw)`.
+
+#### Manheim UK spike — GATED
+- Manheim UK requires trade dealer login for all pricing/listing data. Public search page exists but yields no vehicle prices without authentication. Official Manheim Developer API exists but requires registered trade credentials. **Verdict: GATED — not viable for unauthenticated scraping. Future sprint: apply for API credentials if trade account obtainable.**
+
+#### Compile validation
+- `python -m compileall dealerly -f` → all files clean, exit 0.
+
+---
+
+## Status: Sprint 14 CLOSED — v1.0.0-rc.1 · Report UI polish (Apple Maps 3D, image sizing, header simplification)
+
+### Sprint 14 (2026-03-21) — Report UI Polish
+
+- **`report.py`:** 3D UK stats map rewritten with Apple Maps-style scene:
+  - **Sea:** Two-layer animated shimmer with `emissiveIntensity` pulse via `tick()` + `THREE.Clock`.
+  - **Land:** Filled `ShapeGeometry` polygons (green-grey terrain) + `LineLoop` coastline outlines.
+  - **Bars:** Tapered cylinders (`radiusTop=0.15`) + glowing sphere cap (pin aesthetic).
+  - **Lighting:** Warm `DirectionalLight` sun (0xfff4cc) + cool bounce (0xa0c4ff) + `HemisphereLight` sky.
+  - Canvas height 460 → 520px, FOV 40 → 38°. Section header: "Pipeline Coverage Map".
+  - Orbit controls polar angle constrained (`minPolarAngle: Math.PI/8`, `maxPolarAngle: Math.PI/2.2`).
+  - Map section moved to **bottom of report** (after avoid_html), below main grid — less intrusive.
+- **`report.py`:** Image sizing enlarged throughout:
+  - Default thumb: 236 → 260px wide, min-height 164 → 178px.
+  - Featured card image height: 220 → 300px.
+  - Compact mode thumb: 112 → 120px.
+  - Dense mode thumb: 188 → 200px, featured dense: 190 → 240px.
+- **`report.py`:** Header simplified — `runtime-banner` hidden (`display:none`), `h1` condensed to `<strong>Dealerly</strong> VERSION`, meta line uses `·` separators. Buttons: Dense / Print / Dark (no verbose labels).
+- **`report.py`:** Stat cards trimmed — VRM and MOT counts merged into a single "Top-pool verified" card. Basket/platform-mix cards removed.
+- **`report.py`:** Pipeline table — "DB rows" column removed, limited to 15 rows, timestamp truncated to 16 chars. `<details>` closed by default.
+- **Cazoo correction:** Site confirmed live by user. `SPRINT_RUN.md` + `RELEVANT.md` updated — previous "defunct 2023" entry was wrong. Cazoo adapter is a future sprint candidate.
+
+---
+
+## Status: Sprint 13 CLOSED — v1.0.0-rc.1 · Gumtree infeasible; UX fixes shipped
+
+### Sprint 13 (2026-03-21) — Gumtree Spike + UX Fixes
+
+## Gumtree Spike
+
+**Verdict: INFEASIBLE — sprint closed.**
+
+Feasibility checked 2026-03-21 against `https://www.gumtree.com/robots.txt`.
+
+**Key findings:**
+- `robots.txt` contains `Disallow: /*?` — blocks **all** parameterized URLs including every make/model/price search query the pipeline uses.
+- Without query params, Gumtree's browse path returns location-specific pages with no price filtering and no pagination.
+- Page 1 of a national browse returned ~26 listings (70 total) but all at fixed location with no make/model narrowing — yield for a targeted arbitrage run would be <10 relevant listings.
+- No embedded `__NEXT_DATA__` JSON; uses `window.gumtreeDataLayer` which requires JS rendering.
+- Likely Cloudflare protection — static requests tier would yield sparse results even if robots.txt were satisfied.
+
+**Conclusion:** Implementing a compliant Gumtree adapter would require either (a) violating `robots.txt` on parameterized search, or (b) accepting a non-filtered national browse yielding unacceptably low volume for the arbitrage use-case. Sprint acceptance criteria: "If not viable — document why and close sprint." Closing as non-viable.
+
+**Next best alternative:** AutoTrader UK (`autotrader.co.uk`) — already partly wired as a comps source. A full AutoTrader search adapter may be viable (public search results, structured JSON, high UK car volume). Candidate for Sprint 14.
+
+---
+
+### Sprint 13 UX Fixes (2026-03-21) — Antigravity opt-in + 3D map recoord
+
+- **`pipeline.py` + `cli.py`:** Antigravity report viewer changed from **opt-out** to **opt-in**. Was: launches automatically if binary present (`DEALERLY_DISABLE_ANTIGRAVITY=1` to suppress). Now: requires `DEALERLY_USE_ANTIGRAVITY=1` to launch. Reports open in default browser unless env var set. Resolves "Auto glass launching on every run" issue.
+- **`report.py`:** 3D UK stats map camera target corrected. Was: `controls.target.set(0, 3, 0)` / `camera.lookAt(0, 3, 0)` — pointed at lon≈−10W (Atlantic, west of Ireland). Now: `controls.target.set(5, 3, 6)` / `camera.lookAt(5, 3, 6)` — centred on UK geographic centre (lat≈54N, lon≈−2W). Camera position shifted from `(6, 40, 58)` to `(5, 38, 58)` for cleaner overhead angle. Fixes "UK map not positioned correctly" issue.
+
+### Motors / Cazoo status (2026-03-21)
+
+- **Motors.co.uk:** Static requests tier now returns category/landing pages rather than results — `__NEXT_DATA__` absent; site moved to full JS rendering. `MotorsAdapter` falls back to Playwright when static tier yields 0 listings. If Playwright is not running or the scrape is timing out, Motors will return 0 results. **Action:** Ensure Playwright Chromium is installed (`playwright install chromium`). No code change required — fallback chain is already in place.
+- **Cazoo:** Site is **live and accessible** (cazoo.co.uk) — confirmed active by user 2026-03-21. Previous documentation incorrectly marked Cazoo as defunct. The `cazoo.png` footer logo in `Logos/` is a valid brand asset. A `CazooIngestionAdapter` inheriting `BaseIngestionAdapter` has not yet been built; **candidate for a future sprint**.
+
+### Sprint 12 (2026-03-21) — ANPR profit-weighted budget + Motors pagination
+- **SHIPPED:** ANPR profit-weighted budget (replace positional slice) + early-exit at vrm_conf >= 0.88 + Motors pagination hardening + JSON-LD enrichment. Target: >=8 ANPR utilized (was 5/20), Motors >=70 listings (was 40-51). Files: `pipeline.py`, `config.py`, `motors.py`.
+- **`config.py`:** `DEFAULT_ANPR_PROFIT_WEIGHT = 1.5` + `anpr_profit_weight()` helper (`DEALERLY_ANPR_PROFIT_WEIGHT` env).
+- **`pipeline.py`:** `_anpr_top_slice` positional gate replaced by profit-weighted budget — ANPR approved when `profit >= 1.5×anpr_min_profit` + `_anpr_budget_used < _anpr_budget_cap` (hard cap 8/12). Budget counter excludes listings with existing vrm_confidence >= 0.88. ANPR skip threshold lowered 0.92 → 0.88 in `_enrich_single_listing`.
+- **`motors.py`:** `_MAX_LOW_SIGNAL_PAGES` raised 2 → 3. Hard single-page break removed (pagination now governed solely by consecutive-empty threshold). `_jsonld_entity_to_listing` extracts structured year (`vehicleModelDate`), mileage (`mileageFromOdometer`), and extra gallery images from JSON-LD blocks.
+
+### Opus planning session (2026-03-21) — Sprint 12–13 queued
+- **Sprint 13:** Gumtree UK adapter spike + scaffold if viable. New `gumtree.py` inheriting `BaseIngestionAdapter`. Target: >=15 listings or documented infeasibility.
+- **Backlog:** Sprint 14 (Phase 4 consolidation), Sprint 15 (FB quality), Sprint 16 (packaging).
+- **Deferred:** Craigslist UK (volume too low per Sprint 12 backlog note). Phase 4 merge (wait for Sprint 12 ANPR changes to settle).
+- **NEXT_VERSION.md directive addressed:** "Increase ANPR credit efficiency" → Sprint 12 profit-weighted budget + confidence cascade.
+
+### Sprint 11 follow-up (2026-03-21) — images + VRM slice + report polish
+- **Latest results (05:42 run):** 832 candidates, **8 BUY / 15 OFFER / 4 PASS / 4 AVOID**, 17 VRM in top-33 pool, 17 DVSA; AT cache 71%. Marketplace logo PNGs in `Logos/` (incl. replaced FB asset).
+- **`ebay.py`:** `upgrade_ebay_image_url()` → **`s-l1600`** where `s-l*` present (clearer hero + ANPR input).
+- **`vision.py`:** ANPR ranking **boosts larger eBay picture sizes** (`s-l1600`, etc.).
+- **`pipeline.py`:** Non-eBay ANPR slice **12 / 16** (was 10 / 14) for a few more Marketplace photo attempts.
+
+### Sprint 12 (planned — backlog)
+- **Craigslist UK cars (eventual):** New `CraigslistAdapter` (or regional CL) inheriting `BaseIngestionAdapter`; `platform="craigslist"`; Phase 1 gather + dedupe + report/cards/filter; respect robots/ToS; hero/gallery URLs for ANPR path parity with Sprint 11.
+- **Feasibility note:** Craigslist’s **UK footprint is small** (no full UK site like US cities). Before build: confirm target URLs/volume; if yield is low, treat **Gumtree UK** (same classifieds niche) as the practical alternative in the same sprint spike.
+- **DoD sketch:** `ENABLED_PLATFORMS` / CLI input mode can include `craigslist`; pipeline logs source counts; zero regressions on existing adapters.
+
+### Sprint 11 (2026-03-21) — Non-eBay ANPR, Marketplace UI, MOT BUY gate
+- **Latest report reviewed:** `reports/report_20260321_051029.html` — 0 BUY / 10 OFFER / low VRM hit (2/13 top); many FB cards had hero photos but no ANPR path.
+- **`vision.py`:** Image download uses host-appropriate `Referer` (Facebook/fbcdn, motors.co.uk, else eBay) so Plate Recognizer receives bytes from FB CDN.
+- **`pipeline.py`:** After Phase 3 text pre-pass, **ANPR on hero + gallery URLs** for non-eBay listings (profit/AVOID gates + slice cap), same as eBay photo flow.
+- **`scoring.py`:** MOT-pending **BUY** retention expanded — keep BUY when profit + VRM confidence meet tiered thresholds (1.5×@0.80, 2.0×@0.72, 1.35×@0.86); reason string notes repairs already in estimate.
+- **`report.py`:** Marketplace shown as **discreet bag icon** + `title="Marketplace"` (no “facebook” word on cards/filters); stats/Sources use `marketplace` label; location fallback “Marketplace seller”.
+- **`report.py` + `config.py`:** `LOGOS_DIR` = `Dealerly 1.0/Logos` — optional **`ebay.png` / `motors.png` / `marketplace.png`** embedded as data URIs on cards + filter bar; **`cazoo.png`** optional footer; SVG/text fallback if missing (`Logos/README.md`).
+- **`pipeline.py`:** Console mode label `facebook` → `Marketplace`.
+
+### Hotfix: Phase 2 SQLite lock (2026-03-21)
+- **Symptom:** `OperationalError: database is locked` at `db.insert_comps` during Phase 2 on large runs (e.g. 1000+ listings, Spyder/Windows).
+- **Cause:** Per-row implicit commits + contention with concurrent readers / IDE / WAL checkpointing.
+- **Fix:** `insert_comps()` and `AutoTraderComps.fetch_for_key()` DB writes now use **`BEGIN IMMEDIATE`** + **`executemany`** in a single transaction, with **12** retries and exponential backoff (handles `locked` and `busy`). Keeps WAL mode unchanged per guardrails.
+
+### Pipeline validation (2026-03-21 04:40)
+- 187 listings (147 eBay + 40 Motors), 43 scored, 15 actionable
+- **2 BUY** (Honda Civic 1.8 £677, VW Polo 1.4 £320), 7 OFFER, 6 PASS, 10 AVOID
+- VRM hit rate: 89% (25/28), MOT verified: 26/27
+- AutoTrader comp cache: 55% hit rate (57/103)
+- Zero Unicode crashes, zero NameError, zero database lock errors
+- Report: `reports/archive/report_20260321_044003.html` (312 KB, 1146 lines)
+- All Sprint 10 UX fixes confirmed in output: MOT font sizes, title normalization, VRM pending hide, loading screen layout, expand-body font bump
+
+## Sprint 10 Changes (2026-03-21)
+- **`mot_formatter.py`** Font sizes bumped from 0.82em/0.8em to 0.95em/0.9em across header, test cards, defect lists; padding increased for better readability. Line-height improved to 1.5.
+- **`report.py`** `_normalise_title()`: fixes common eBay seller misspellings (diesal→Diesel, petral→Petrol, mannual→Manual, etc.) before card display. Applied in `_card_html()`.
+- **`report.py`** `_applyVrm()` JS: now hides the "Verification pending" `<small class='warn'>` element when user saves a manual VRM — previously the label persisted after entry.
+- **`report.py`** `.expand-body` CSS: font-size bumped from 0.82em to 0.92em so MOT history content is not double-shrunk inside the expandable wrapper.
+- **`report.py` + `reports/dealerly_loading.html`** Loading screen `.row` CSS: fixed overlap between stage text and percentage on narrow viewports — text now truncates with ellipsis, percentage stays aligned right.
+- **`pipeline.py` + `cli.py` + `report.py`** Fixed `UnicodeEncodeError` on Windows cp1252 console — replaced `≥` (U+2265), `→` (U+2192), `✗` (U+2717), `⚠` (U+26A0), `✓` (U+2713) in print statements with ASCII equivalents. Wrapped `listing.title` and `out.reason` in `console_safe()` in `print_report()`.
+- **`db.py`** `db_connect()`: increased SQLite timeout from 10s to 30s, added `PRAGMA busy_timeout=30000`. `insert_comps()`: superseded by Hotfix (2026-03-21) — `BEGIN IMMEDIATE` + batch insert + 12-attempt backoff (see section above).
+- **`config.py`** `DB_PATH`: now configurable via `DEALERLY_DB_FILE` env var (default `dealerly.db`) — allows running with alternate DB when Spyder holds a lock on the main file.
+- **`report.py`** `generate_html_report()`: fixed `NameError: cannot access free variable '_sm'` — `_sm = seen_map or {}` was defined after its first use in top-3 strip and near-miss featured cards. Moved definition above first `_card_html()` call site.
+
+## Status: Sprint 9 complete — v1.0.0-rc.1 (Seen-before / price-trend badges)
+
+## Sprint 9 Changes (2026-03-21)
+- **`db.py`** `get_listing_seen_info(conn, item_id, vrm)`: queries `price_observations` (count + first-seen price for same `item_id`), `watchlist`, `leads`, and `completed_trades` (by normalised VRM). Returns `{times_seen, first_seen_price, watchlisted, has_lead, was_traded}`.
+- **`report.py`** `_seen_badges_html(seen_info, current_price)`: renders inline badges — `↻ Seen N×` (grey), `↓ £X` / `↑ £X` price-trend (|delta| ≥ £25), `★ Watchlisted` (purple), `✓ Traded` (blue), `Lead open` (amber). All six `.tag-seen*` CSS classes added with dark-mode variants.
+- **`report.py`** `_card_html()`: `seen_info: dict | None = None` param; badges in `card-top` row after mileage tag. All 5 render sites updated (top-3 strip, main grid, near-miss, avoid, featured near-miss).
+- **`report.py`** `generate_html_report()`: `seen_map: dict | None = None` param; distributed to all `_card_html` calls.
+- **`pipeline.py`**: `get_listing_seen_info` imported; `_seen_map` built over all output rows before report generation; passed as `seen_map=_seen_map`.
+- **Observation logged:** Toyota Auris 2008 (58) 3rd available listing had clear VRM in image but ANPR budget-skipped (2 calls made, 15 skipped). Affects profit estimate accuracy — flagged for Sprint 10 ANPR threshold review.
+
+## Status: Sprint 8 complete — v1.0.0-rc.1 (Report v2 scoring breakdown + PDF, Motors mileage hardening)
+
+## Sprint 8 Changes (2026-03-21)
+- **`report.py`** `_score_breakdown_html()`: new helper renders a full scoring input/output table (buy price, resale, repairs, fees, holding cost, admin/transport buffer, target margin, risk buffer, shock ratio, velocity score, DVLA colour/engine/tax, full reason + notes). Wired into `_card_html()` as a `<details>` expandable after the reason snippet on every card.
+- **`report.py`** Print / PDF: `printReport()` JS, `@media print` CSS (hides filter bar / buttons, expands all `<details>`, `break-inside:avoid` per card), "🖨 Print / PDF" button in header actions.
+- **`motors.py`** `_parse_mileage_from_text(text) -> Optional[int]`: shared helper covering standard "45,000 miles" and k-shorthand "45k miles" / "45.5k miles" formats. Replaces inline regex in `_parse_bs4` and `_playwright_extract_dom_cards`. Sanity range 100–400,000.
+- **`motors.py`** DOM card JS extended: dedicated mileage element selector (`[class*="mileage"],[class*="odometer"],[data-mileage]`) extracted separately and passed as `mileageText`; Python side prefers it over full card text.
+- **`motors.py`** `_fetch_query()`: initial `_url_mode` changed from `0` (`/search/car/`) to `3` (`/used-cars/`) — the consistently stable route per `_build_search_url_candidates` priority order.
+- **`motors.py`** Static-fallback before Playwright: on page 1 returning 0 listings, tries alt URL modes 1 and 0 before triggering Playwright. Reduces unnecessary headless browser launches for simple URL-format drift.
+
+## Status: Sprint 7 complete — v1.0.0-rc.1 (item_vrm cache pre-fetch, AVOID ANPR gate, VRM label expansion)
+
+## Sprint 7 Changes (2026-03-20)
+- **`pipeline.py`** `_enrich_single_listing`: `get_item_vrm` DB cache check moved BEFORE `ebay_get_item()` — saves one eBay item API call per already-cached listing. Previously cached VRMs still triggered a full item fetch before returning.
+- **`pipeline.py`** Phase 3 main loop: AVOID-decision listings excluded from ANPR gate (`prelim_out.decision != "AVOID"`). AVOID listings are already rejected by risk/shock and a VRM won't change the outcome; no point burning ANPR credits.
+- **`vrm.py`** `_LABEL_PATTERN`: Added Sprint 7 label variants — `personal plate/reg/number`, `cherished reg/plate/number`, `has a reg`, `own reg`, `includes reg`, `selling with reg`, `has its reg`. Improves VRM hit-rate for UK private-sale listings advertising personalised plates.
+
+## Sprint 6 Changes (2026-03-20)
+- **`vrm.py`**: `extract_vrm_from_text(text, year=None) -> list[tuple[str, float]]` — scans plain text for all UK VRM candidates using label scan (conf ≥ 0.96) + SAFE body scan (conf ≤ 0.88). Returns deduplicated list sorted by confidence. False-positive rejection via existing `_scan_patterns` blocklist pipeline.
+- **`pipeline.py`** Phase 3: text pre-pass runs on ALL `to_enrich` listings before the ANPR/DVLA sort. For each listing without a VRM: concatenates `listing.title` + raw card/description text → `extract_vrm_from_text()`; if best candidate conf ≥ 0.70 and year-plausible, sets `listing.vrm`, `vrm_source="text_prepass"`. Reduces ANPR spend for non-eBay listings.
+- **`calibration.py`**: `prediction_vs_outcome(conn) -> list[dict]` — joins deal log CSV with `completed_trades` DB on normalised VRM. Returns `{vrm, title, predicted, realised, delta, platform, decision}` sorted by |delta|. `format_prediction_vs_outcome()` renders plain-text table with mean delta + beat-forecast summary.
+- **`trades.py`**: `print_trades_summary` now calls `prediction_vs_outcome` after manual accuracy section; shows cross-referenced pipeline-vs-trade table when ≥1 VRM match exists.
+
+## Sprint 5 Changes (2026-03-20)
+- **`config.py`**: `fb_max_listings()` helper (`DEALERLY_FB_MAX_LISTINGS` env, default 400).
+- **`facebook.py`**: `FB_QUALITY` module-level counter dict reset at each run. `_title_is_good()` make-token classifier. `_extract_cards` accumulates `fb_titles_good`, `fb_mileage_found`, `fb_thumb_found`. Scroll loop: early-exit when <5 new listings in last 2 consecutive cycles; cap check at top of each cycle via `fb_max_listings()`.
+- **`pipeline.py`**: After FB adapter returns, imports `FB_QUALITY` and logs quality line + adds counters to `_budget_counters`. PIPELINE_REPORT template includes FB quality line.
+- **`models.py`**: `extra_image_urls: str = ""` field added to `Listing` (comma-separated gallery URLs).
+- **`pipeline.py`** enrichment: Sprint 5 single `collect_image_urls` call always runs; hero updated if placeholder; `_gallery_extras` stored in `listing.extra_image_urls`.
+- **`report.py`**: `_gallery_wrap_html()` replaces `_thumb_html()` — renders full `.thumb-wrap` div with prev/next chevron buttons and `gal-counter` on hover when multiple images available. `galNav()` JS function added. CSS: `.gal-btn`, `.gal-prev`, `.gal-next`, `.gal-counter` with opacity transitions. `.thumb-wrap` gains `position:relative`.
+- **`prompts/DEALER_PITCH.md`**: Cold email templates, in-person pitch script, objection handling, pricing tiers, demo checklist.
+
+## Status: Sprint 4 complete — v1.0.0-rc.1 (DVLA top-slice, --no-facebook, VRM badge, AT cache log)
+Goal: unlock BUY decisions by fixing enrichment→verification→decision pipeline.
+Root cause fixed: high-profit candidates were credit-starved in Phase 3; MOT gate had no confidence-tiered exception for high-value confirmed-VRM listings.
+
+## Sprint 1 Changes (2026-03-20)
+- **`pipeline.py`**: eBay enrichment candidates now sorted by prelim `expected_profit` desc before Phase 3 loop. Priority pass added: top-N (default 5, `DEALERLY_PRIORITY_ENRICH_N`) always get ANPR/DVLA regardless of idx-slice caps.
+- **`scoring.py`**: Confidence-tiered BUY exception at MOT gate — when `profit >= 1.5 × target_margin` AND `vrm_confidence >= 0.8`, listing stays BUY with "MOT pending" note instead of blanket downgrade to OFFER.
+- **`config.py`**: `DEFAULT_PRIORITY_ENRICH_N = 5`, `priority_enrich_n()` helper, `MIN_VRM_CONFIDENCE_MOT_EXCEPTION = 0.80`, `VERSION = "1.0.0-rc.1"`.
+- **`db.py`**: `completed_trades` table added to `init_db()`; `log_completed_trade()`, `list_completed_trades()`, `get_trades_accuracy_summary()` helpers.
+- **`trades.py`** (NEW): `log_trade_interactive()` (full interactive CLI prompt flow) + `print_trades_summary()` (accuracy report). Supports manual pre-Dealerly flip entry (e.g. Meriva KT06YNX).
+- **`cli.py`**: `--log-trade` and `--trades` flags wired to `trades.py`. Version bumped to v1.0.0-rc.1.
+- **No risk gates weakened.** CLAUDE.md and `.cursorrules` take precedence.
+
+## Latest Verified Run Snapshot
+- Report source: `prompts/PIPELINE_REPORT.md` (2026-03-20 **12:11** — refresh if newer run exists)
+- Platforms: eBay `98`, Motors `32`, Facebook `943`
+- Decisions: BUY `0`, OFFER `18`, PASS `4`, AVOID `23`
+- Runtime hotspots: Phase 1 (`287.1s`), Phase 2 (`148.7s`); Phase 3/4 lower (`52.8s` / `23.7s`)
+
+## Completed In This Iteration
+- **Docs — model split:** `prompts/MASTER_PROMPT_OPUS.md` = **Opus** planning (low %); ships **Sonnet** sprint prompts from `prompts/MASTER_PROMPT_SONNET_CODE.md` (Sprint 1–2) + Sprint 3+ backlog. `prompts/MASTER_PROMPT_OPUS_COPYPASTE.md` = short Opus paste + optional `PIPELINE_REPORT` appendix.
+- **API/runtime gating pass:** Tightened Phase 2/4 candidate limits and applied stricter top-slice gates for Phase 3/4.5 ANPR and DVLA enrichment.
+- **API budget counters:** Added explicit call/skip counters for ANPR, DVLA (including validation pass), item VRM cache hits, and AutoTrader scored candidate budgets.
+- **Facebook fallback yield pass:** Adapter now runs unauthenticated fallback when cookies are missing, with cookie-consent dismissal and stronger fallback scroll cycles.
+- **Facebook card title hints:** Scrape now captures `aria-label` / image `alt`/`title` and prefers them over span soup when location-only titles appear; mileage regex also scans those hints.
+- **Report top-row diversity:** Main display selection round-robins BUY/OFFER picks across platforms (by expected profit within each platform) so Facebook volume does not crowd out eBay/Motors in the primary grid.
+- **Decision explainability on cards:** BUY/OFFER/PASS rows show a truncated scoring `reason` snippet (full text on hover) below the numeric row.
+- **Cart access panel:** Added explicit `Open cart` access in report filter bar with a dedicated review panel of selected listings.
+- **Seller fallback labels:** Missing or masked location labels now show platform-safe fallback text (`ebay seller`, `motors seller`) in cards.
+- **VRM extraction robustness:** Added OCR-confusion repair for ANPR outputs (0/O, 1/I, 5/S, 8/B in expected plate positions) to recover visible-plate misses.
+- **Zip handoff utility:** Added `export_dealerly_zip.ps1` for repeatable project zip export excluding DB/log/cache-heavy artifacts.
+- **Git hygiene:** `fb_cookies.json` added to `.gitignore` (session export must not land in a public repo). `dealerly/__pycache__/` must **not** be tracked — use `git rm -r --cached dealerly/__pycache__` if it was committed by mistake.
+- **Obsidian vault path:** `obsidian_vault_path()` in `config.py` + `DEALERLY_OBSIDIAN_VAULT` env; pipeline Phase 7 uses same root as brain load. Vault root doc: `Dealerly_Vault/_Dealerly_Brain.md`.
+- **Windows-friendly efficiency:** Env-tunable ANPR (`DEALERLY_ANPR_MAX_IMAGES`, `DEALERLY_ANPR_MIN_PROFIT_GBP`); local OpenAI-compatible offer AI (Ollama/LM Studio) via `OPENAI_BASE_URL` + optional omit key on localhost; HTML report runtime banner; `DEALERLY_AI_BACKEND=local` alias.
+- **Docs + brain:** Obsidian entry `Dealerly_Vault/_Dealerly_Brain.md` (full env + ANPR + local AI + Claude-app note). Repo: `prompts/TROUBLESHOOTING.md`, `CLAUDE.md`, `README.md`, `RELEVANT.md` handoff.
+- **Cursor tooling:** Documented **Figma**, **Slack**, **GitLab** as in-scope when connected in Cursor — `.cursorrules`, `README.md`, `CLAUDE.md`, `prompts/RELEVANT.md`, session/master prompts, Obsidian `_Dealerly_Brain.md`.
+
+## Sprint 4 Changes (2026-03-20)
+- **`pipeline.py`**: DVLA top-slice loosened +4 per listing when `prelim_out.expected_profit >= 200`. Per-listing cap (`_dvla_slice_cap`) replaces blanket idx gate — only high-profit rows benefit. No risk gate weakened.
+- **`pipeline.py`**: `--no-facebook` env-var filter — when `DEALERLY_NO_FACEBOOK=1`, "facebook" is excluded from `_enabled_platforms` before adapter construction. Skips FB gather entirely for fast eBay+Motors runs.
+- **`pipeline.py`**: AutoTrader comp cache hit/miss logged after Phase 2 and Phase 4 (stdout + PIPELINE_REPORT).
+- **`cli.py`**: `--no-facebook` flag detected in `main()` → sets `DEALERLY_NO_FACEBOOK=1` env var before `run()`.
+- **`report.py`**: BUY/OFFER cards without VRM now show `.tag-no-vrm` badge ("No VRM — contact seller"); PASS/AVOID keep dim "no VRM" label. CSS added for light/dark theme.
+- **`autotrader.py`**: `_cache_hits` / `_cache_misses` instance counters — incremented in `fetch_for_key` for run-cache hits, DB-cache hits, and live fetches. Surfaced in Phase 2/4 log lines and PIPELINE_REPORT.
+
+## Sprint 3 Changes (2026-03-20)
+- **`pipeline.py`**: ANPR high-conf skip gate — if `vrm_confidence ≥ 0.92` (labelled text/item-specifics), ANPR is skipped and counted as "avoided". Saves credits on any run where regex extraction found a clear label. Also unifies the skip counter so Obsidian-cache + confident-text paths are both tracked.
+- **`vrm.py`**: Label pattern expanded — added `"my reg"`, `"the reg"`, `"private reg"`, `"private plate"`, `"comes with reg"`, `"sold with reg"` variants (common in UK Facebook/eBay free-text). Label group window widened from 4–9 → 4–10 chars; trailing context from 14 → 20 chars for edge cases.
+- **`scoring.py`**: Reason strings enriched with deal-specific numbers — BUY shows est. profit + VRM; OFFER shows max bid + net profit; AVOID shows worst-case repair £; PASS shows asking price + max bid. Cards now show actionable context, not boilerplate.
+
+## Sprint 2 Changes (2026-03-20)
+- **`trades.py`**: `import_trades_from_csv()` — bulk import from dealer/personal CSV; `seed_demo_trades()` — idempotent Meriva KT06YNX seed; `write_trade_to_obsidian()` — auto-write trade notes to `Dealerly_Vault/Trades/`.
+- **`calibration.py`**: `calibrate_from_trades(conn, capital)` — computes avg realised profit, sell/buy margin, prediction accuracy from actual completed trades.
+- **`cli.py`**: `--import-trades <csv>`, `--seed-demo-trades` flags; quickstart shows real-flip calibration insight (≥1 trade).
+- **Obsidian**: `Dealerly_Vault/Trades/20260320_KT06YNX.md` created (Meriva £515 profit). `_Dealerly_Brain.md` updated with Sprint 1–2 trade/SWAutos section.
+- **Meriva seeded**: KT06YNX buy £900 sell £1,695 repairs £200 equip £80 → realised £515.
+
+## Active Tasks (Priority Ordered)
+1. **Sprint 12 prep — Craigslist UK cars (eventual, see Sprint 12 backlog)**
+   - Spike: listing URL patterns, volume, legal/robots; decide CL vs Gumtree UK primary.
+2. **Facebook reliability (Critical)**
+   - Re-run live scrape to measure **title quality** after aria/alt hinting (vs generic location strings).
+   - Keep cookie/session setup deterministic for stable authenticated runs; keep `fb_cookies.json` local-only.
+3. **API minimization and runtime control (Critical)**
+   - Re-check BUY/OFFER quality after stricter caps.
+   - Tune caps further only if runtime remains high vs decision quality.
+4. **Cart accessibility (High)**
+   - Validate panel behavior in browser on a fresh report run.
+5. **VRM extraction on visible plates (High)**
+   - Verify Skoda Octavia-type visible-plate case in next full run.
+6. **Seller/dealer label fallback (Medium)**
+   - Confirm all masked postcode-style labels are replaced consistently.
+7. **Packaging + handoff (Medium)**
+   - GitHub: source pushed to remote; `.env` gitignored — no secrets in repo.
+   - Zip export (`export_dealerly_zip.ps1`) optional for offline handoff only.
+   - Keep Obsidian/context handoff docs minimal-token and up to date.
+
+## Guardrails
+- Surgical diffs only.
+- Do not modify `dealerly_log.csv`.
+- Keep SQLite WAL mode enabled.
+- Read `prompts/PIPELINE_REPORT.md` and `prompts/NEXT_VERSION.md` before changing thresholds.
+- Minimize token usage in planning, prompts, and patch notes.
+- Minimize external/API usage unless expected decision value is high.
+
+## AI Next Steps Prompt
+1. **Eventual (Sprint 12):** Craigslist UK cars adapter (or Gumtree UK if CL yield insufficient) — see Sprint 12 backlog.
+2. Facebook **quality** (title/VRM/mileage): validate aria/alt title picks in production HTML; iterate selectors if FB changes markup.
+3. VRM yield vs ANPR budget / credits; labelled extraction and cache-first paths.
+4. BUY vs OFFER explainability: card `reason` line is live — tune `scoring.py` copy if snippets are too noisy or cryptic.
+5. Phase 1/2 runtime if gather + prelim scoring remain dominant.
+6. Obsidian/context docs stay minimal-token; surgical edits + `python -m impeccable`.
+7. Keep API and token usage minimal by default; production offer messages off unless explicitly enabled.
